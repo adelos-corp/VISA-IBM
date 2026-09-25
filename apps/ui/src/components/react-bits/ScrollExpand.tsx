@@ -28,6 +28,7 @@ const ScrollExpand = ({
   overlayScrim = 0.45,
   useWindowScroll = false,
   enabled = true,
+  stageHeight = null,
   children,
   className = '',
   style,
@@ -55,7 +56,8 @@ const ScrollExpand = ({
     smoothing,
     overlayScrim,
     useWindowScroll,
-    enabled
+    enabled,
+    stageHeight
   };
 
   const applyProgress = useCallback(p => {
@@ -112,7 +114,7 @@ const ScrollExpand = ({
 
     const measure = () => {
       const c = propsRef.current;
-      stageH = c.useWindowScroll ? window.innerHeight : root.clientHeight;
+      stageH = c.stageHeight === 'viewport' ? window.innerHeight : (typeof c.stageHeight === 'number' ? c.stageHeight : (c.useWindowScroll ? window.innerHeight : root.clientHeight));
       if (stageH <= 0) return;
       stage.style.height = `${stageH}px`;
       track.style.height = `${stageH * (1 + Math.max(0, c.scrollDistance) + Math.max(0, c.holdDistance))}px`;
