@@ -40,8 +40,8 @@ export function Hero() {
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#8b949e] sm:text-base">A controlled deployment platform that analyzes, approves, deploys, recovers, and verifies applications.</p>
         </div>
 
-        <div className="relative z-10 h-[210vh] overflow-visible rounded-t-xl border border-white/10 border-b-0">
-          <ScrollExpand src={visual} alt="VISA deployment workflow" useWindowScroll stageHeight="viewport" startWidth={58} startHeight={58} startRadius={28} endRadius={0} mediaZoom={1.08} scrollDistance={1.25} holdDistance={0.5} smoothing={0.06} title="Deploy with confidence." scrollHint="Scroll to expand" />
+        <div className="relative z-10 h-[235vh] overflow-visible rounded-t-xl border border-white/10 border-b-0">
+          <ScrollExpand src={visual} alt="VISA deployment workflow" useWindowScroll stageHeight="viewport" startWidth={58} startHeight={58} startRadius={28} endRadius={0} mediaZoom={1.08} scrollDistance={1} holdDistance={0.35} smoothing={0.06} title="Deploy with confidence." scrollHint="Scroll to expand" />
         </div>
       </div>
     </section>
