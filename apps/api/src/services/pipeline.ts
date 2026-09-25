@@ -14,6 +14,7 @@ import {
   savePreCheckReport,
   savePlan,
   getPlan,
+  getAnalysisByProject,
   saveDiagnosis,
   getDiagnosis,
   saveCorrectionAttempt,
@@ -94,7 +95,9 @@ export async function startPipeline(deploymentId: string): Promise<void> {
       imageTag: tag,
       port: analysis.port,
       healthPath: analysis.healthPath,
-      envVars: {},  // intentionally empty — triggers failure on first run
+      // Intentionally empty on the first deployment so the demo can exercise
+      // the failure → diagnosis → approval → correction loop.
+      envVars: {},
       steps: [
         `docker build -t ${tag} ${projectPath}`,
         `docker run -d -p ${analysis.port + 10000}:${analysis.port} ${tag}`,
