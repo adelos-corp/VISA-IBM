@@ -2,6 +2,7 @@
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 
 .scroll-expand--scroller {
@@ -19,6 +20,7 @@
 .scroll-expand__track {
   position: relative;
   width: 100%;
+  height: 100%;
 }
 
 .scroll-expand__stage {
