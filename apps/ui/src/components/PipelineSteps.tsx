@@ -8,34 +8,29 @@ const STEPS = [
   { label: 'Monitor', type: 'bob' },
   { label: 'Failure?', type: 'danger' },
   { label: 'Diagnose', type: 'bob' },
-  { label: 'Correction Approval', type: 'approval' },
-  { label: 'Auto-Correct', type: 'default' },
+  { label: 'Correction', type: 'approval' },
   { label: 'Redeploy', type: 'default' },
   { label: 'Verify', type: 'bob' },
-  { label: 'Live ✓', type: 'success' },
+  { label: 'Live', type: 'success' },
 ]
 
 const typeStyles: Record<string, string> = {
-  default: 'bg-gray-100 border-gray-300 text-gray-700',
-  bob: 'bg-blue-50 border-blue-300 text-blue-700',
-  approval: 'bg-yellow-50 border-yellow-300 text-yellow-800',
-  danger: 'bg-red-50 border-red-300 text-red-700',
-  success: 'bg-green-50 border-green-300 text-green-700',
+  default: 'bg-slate-50 border-slate-200 text-slate-600',
+  bob: 'bg-blue-50/80 border-blue-200 text-blue-700',
+  approval: 'bg-amber-50 border-amber-200 text-amber-700',
+  danger: 'bg-rose-50 border-rose-200 text-rose-700',
+  success: 'bg-emerald-50 border-emerald-200 text-emerald-700',
 }
 
 export function PipelineSteps() {
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1.5">
       {STEPS.map((step, i) => (
-        <div key={step.label} className="flex items-center gap-1">
-          <span
-            className={`text-xs font-medium border rounded px-2.5 py-1 whitespace-nowrap ${typeStyles[step.type]}`}
-          >
+        <div key={step.label} className="flex items-center gap-1.5">
+          <span className={`rounded-md border px-2.5 py-1.5 text-[11px] font-semibold whitespace-nowrap ${typeStyles[step.type]}`}>
             {step.label}
           </span>
-          {i < STEPS.length - 1 && (
-            <span className="text-gray-400 text-xs">→</span>
-          )}
+          {i < STEPS.length - 1 && <span className="text-slate-300 text-xs">›</span>}
         </div>
       ))}
     </div>
