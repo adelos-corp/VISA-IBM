@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_15%_0%,#123b7a_0%,#071a3d_32%,#020817_72%,#01040b_100%)] text-white">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_0%,#182235_0%,#0b1220_34%,#050912_68%,#02040a_100%)] text-white">
       <Hero />
 
       <main className="mx-auto max-w-6xl px-4 pb-12">
