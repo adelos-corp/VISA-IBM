@@ -93,7 +93,7 @@ export const projects = {
   },
 
   createDeployment(id: string): Promise<{ deployment: Deployment }> {
-    return request(`/projects/${id}/deployments`, { method: 'POST' })
+    return request(`/projects/${id}/deployments`, {\n      method: 'POST',\n      body: JSON.stringify({}),\n    })
   },
 }
 
@@ -123,7 +123,7 @@ export const deployments = {
   },
 
   run(id: string): Promise<{ started: boolean }> {
-    return request(`/deployments/${id}/run`, { method: 'POST' })
+    return request(`/deployments/${id}/run`, {\n      method: 'POST',\n      body: JSON.stringify({}),\n    })
   },
 
   getChecks(id: string): Promise<{ deploymentId: string; report: { checks: Array<{ name: string; status: string; message: string }>; overallStatus: string } | null }> {
