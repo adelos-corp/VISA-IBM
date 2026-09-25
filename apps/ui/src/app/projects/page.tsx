@@ -43,7 +43,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="min-h-screen">
-      <main className="visa-grid min-h-[calc(100vh-4rem)] px-6 py-8 lg:px-8">
+      <main className="visa-grid min-h-screen px-6 pb-8 pt-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
