@@ -34,9 +34,9 @@ export type DeploymentStatus =
 
 export interface Project {
   id: string
-  name: string
   gitUrl: string | null
   localPath: string | null
+  name: string
   createdAt: string
 }
 
@@ -93,7 +93,10 @@ export const projects = {
   },
 
   createDeployment(id: string): Promise<{ deployment: Deployment }> {
-    return request(`/projects/${id}/deployments`, {\n      method: 'POST',\n      body: JSON.stringify({}),\n    })
+    return request(`/projects/${id}/deployments`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
   },
 }
 
@@ -123,7 +126,10 @@ export const deployments = {
   },
 
   run(id: string): Promise<{ started: boolean }> {
-    return request(`/deployments/${id}/run`, {\n      method: 'POST',\n      body: JSON.stringify({}),\n    })
+    return request(`/deployments/${id}/run`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
   },
 
   getChecks(id: string): Promise<{ deploymentId: string; report: { checks: Array<{ name: string; status: string; message: string }>; overallStatus: string } | null }> {
