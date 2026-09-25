@@ -56,9 +56,15 @@ export async function runContainer(
     envArgs.push('-e', `${k}=${v}`)
   }
 
+  const containerName = tag.replace(/[^a-z0-9-]/g, '-')
+
+  // Make retries/redeployments deterministic. A failed first attempt leaves
+  // an exited container behind, and Docker refuses to reuse its name.
+  await execa('docker', ['rm', '-f', containerName], { reject: false })
+
   const args = [
     'run', '-d',
-    '--name', tag.replace(/[^a-z0-9-]/g, '-'),
+    '--name', containerName,
     '-p', `${hostPort}:${plan.port}`,
     ...envArgs,
     tag,
