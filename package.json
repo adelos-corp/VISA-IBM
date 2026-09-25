@@ -1,0 +1,20 @@
+{
+  "name": "visa",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VISA — Fast, Approved, Auto-Correctible Web Deployment Platform",
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "dev:api": "pnpm --filter @visa/api dev",
+    "dev:ui": "pnpm --filter @visa/ui dev",
+    "dev:mcp": "pnpm --filter @visa/mcp dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean",
+    "demo": "node samples/demo-app/server.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
