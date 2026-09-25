@@ -5,8 +5,6 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { deployments, type Deployment, type DeploymentEvent, type LogEntry } from '@/lib/api'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface StageUpdate { stage: string; stageStatus: 'RUNNING' | 'DONE' | 'FAILED'; [k: string]: unknown }
 interface DiagnosisInfo {
   failureType: string; rootCause: string; proposedCorrectionJson: string
@@ -15,34 +13,29 @@ interface DiagnosisInfo {
 interface Plan { imageTag: string; port: number; healthPath: string; steps: string[] }
 interface CheckResult { name: string; status: string; message: string }
 
-// ─── Status helpers ───────────────────────────────────────────────────────────
-
 const STATUS_LABEL: Record<string, string> = {
-  PENDING: 'Pending', ANALYZING: 'Analyzing…', CHECKING: 'Pre-Checks…',
-  AWAITING_APPROVAL: 'Awaiting Approval', DEPLOYING: 'Deploying…',
-  VERIFYING: 'Verifying…', LIVE: 'Live', FAILED: 'Failed',
-  CORRECTING: 'Auto-Correcting…', TERMINAL: 'Terminated',
+  PENDING: 'Pending', ANALYZING: 'Analyzing', CHECKING: 'Pre-Checks',
+  AWAITING_APPROVAL: 'Awaiting Approval', DEPLOYING: 'Deploying',
+  VERIFYING: 'Verifying', LIVE: 'Live', FAILED: 'Failed',
+  CORRECTING: 'Auto-Correcting', TERMINAL: 'Terminated',
 }
 const STATUS_COLOR: Record<string, string> = {
-  PENDING: 'bg-gray-100 text-gray-700 border-gray-300',
-  ANALYZING: 'bg-blue-50 text-blue-700 border-blue-300',
-  CHECKING: 'bg-blue-50 text-blue-700 border-blue-300',
-  AWAITING_APPROVAL: 'bg-yellow-50 text-yellow-800 border-yellow-300',
-  DEPLOYING: 'bg-blue-50 text-blue-700 border-blue-300',
-  VERIFYING: 'bg-blue-50 text-blue-700 border-blue-300',
-  LIVE: 'bg-green-50 text-green-700 border-green-300',
-  FAILED: 'bg-red-50 text-red-700 border-red-300',
-  CORRECTING: 'bg-purple-50 text-purple-700 border-purple-300',
-  TERMINAL: 'bg-red-50 text-red-700 border-red-300',
+  PENDING: 'border-slate-200 bg-slate-50 text-slate-600',
+  ANALYZING: 'border-blue-200 bg-blue-50 text-blue-700',
+  CHECKING: 'border-blue-200 bg-blue-50 text-blue-700',
+  AWAITING_APPROVAL: 'border-amber-200 bg-amber-50 text-amber-700',
+  DEPLOYING: 'border-blue-200 bg-blue-50 text-blue-700',
+  VERIFYING: 'border-cyan-200 bg-cyan-50 text-cyan-700',
+  LIVE: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  FAILED: 'border-rose-200 bg-rose-50 text-rose-700',
+  CORRECTING: 'border-violet-200 bg-violet-50 text-violet-700',
+  TERMINAL: 'border-rose-200 bg-rose-50 text-rose-700',
 }
 const TERMINAL_STATUSES = new Set(['LIVE', 'TERMINAL'])
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function DeploymentPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-
   const [deployment, setDeployment] = useState<Deployment | null>(null)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [stages, setStages] = useState<Record<string, StageUpdate>>({})
@@ -51,10 +44,8 @@ export default function DeploymentPage() {
   const [diagnosis, setDiagnosis] = useState<DiagnosisInfo | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [approving, setApproving] = useState(false)
-
   const logsEndRef = useRef<HTMLDivElement>(null)
 
-  // Initial load
   useEffect(() => {
     deployments.get(id).then(({ deployment: d }) => setDeployment(d)).catch(e => setError(e.message))
     deployments.getLogs(id).then(({ logs: l }) => setLogs(l)).catch(() => {})
@@ -63,40 +54,28 @@ export default function DeploymentPage() {
     deployments.getDiagnosis(id).then(r => { if (r.diagnosis) setDiagnosis(r.diagnosis) }).catch(() => {})
   }, [id])
 
-  // SSE
   useEffect(() => {
-    if (!deployment) return
-    if (TERMINAL_STATUSES.has(deployment.status)) return
-
+    if (!deployment || TERMINAL_STATUSES.has(deployment.status)) return
     const es = deployments.streamEvents(id, (event: DeploymentEvent) => {
       if (event.type === 'status') {
         const newStatus = event.payload.status as string
         setDeployment(prev => prev ? { ...prev, status: newStatus as Deployment['status'] } : prev)
-        // Refresh derived data when status changes
         if (newStatus === 'AWAITING_APPROVAL') {
           deployments.getPlan(id).then(r => { if (r.plan) setPlan(r.plan) }).catch(() => {})
           deployments.getChecks(id).then(r => { if (r.report) setChecks(r.report.checks) }).catch(() => {})
         }
-        if (newStatus === 'FAILED') {
-          deployments.getDiagnosis(id).then(r => { if (r.diagnosis) setDiagnosis(r.diagnosis) }).catch(() => {})
-        }
+        if (newStatus === 'FAILED') deployments.getDiagnosis(id).then(r => { if (r.diagnosis) setDiagnosis(r.diagnosis) }).catch(() => {})
       }
       if (event.type === 'stage') {
         const s = event.payload as unknown as StageUpdate
         setStages(prev => ({ ...prev, [s.stage]: s }))
       }
-      if (event.type === 'log') {
-        setLogs(prev => [...prev, event.payload as unknown as LogEntry])
-      }
+      if (event.type === 'log') setLogs(prev => [...prev, event.payload as unknown as LogEntry])
     }, () => {})
-
     return () => es.close()
   }, [id, deployment?.status])
 
-  // Auto-scroll logs
-  useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [logs])
+  useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [logs])
 
   const handleApproval = useCallback(async (gate: 'DEPLOY' | 'CORRECT', decision: 'APPROVED' | 'REJECTED') => {
     if (!deployment) return
@@ -107,192 +86,157 @@ export default function DeploymentPage() {
       setDeployment(updated)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Approval failed')
-    } finally {
-      setApproving(false)
-    }
+    } finally { setApproving(false) }
   }, [id, deployment])
 
-  if (error) return (
-    <PageShell>
-      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <p className="text-red-700 font-medium">{error}</p>
-        <button onClick={() => router.push('/')} className="mt-4 text-sm text-red-600 underline">← Back</button>
-      </div>
-    </PageShell>
-  )
-
-  if (!deployment) return <PageShell><div className="text-center py-16 text-gray-400">Loading…</div></PageShell>
+  if (error) return <PageShell><div className="visa-card p-10 text-center"><div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-rose-600">!</div><p className="text-sm font-semibold text-slate-800">{error}</p><button onClick={() => router.push('/')} className="mt-4 text-xs font-semibold text-blue-600">← Back to control plane</button></div></PageShell>
+  if (!deployment) return <PageShell><div className="visa-card p-12 text-center"><div className="mx-auto mb-3 h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" /><p className="text-xs text-slate-500">Loading deployment telemetry…</p></div></PageShell>
 
   const statusLabel = STATUS_LABEL[deployment.status] ?? deployment.status
-  const statusColor = STATUS_COLOR[deployment.status] ?? 'bg-gray-100 text-gray-700 border-gray-300'
+  const statusColor = STATUS_COLOR[deployment.status] ?? STATUS_COLOR.PENDING
   const isTerminal = TERMINAL_STATUSES.has(deployment.status)
-  const diagnosisCorrection = diagnosis ? JSON.parse(diagnosis.proposedCorrectionJson) : null
+  let diagnosisCorrection: { diff?: string } | null = null
+  if (diagnosis) {
+    try { diagnosisCorrection = JSON.parse(diagnosis.proposedCorrectionJson) } catch { diagnosisCorrection = null }
+  }
 
   return (
     <PageShell>
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-        <Link href="/" className="hover:text-gray-900">Home</Link>
-        <span>→</span>
-        <Link href="/projects" className="hover:text-gray-900">Projects</Link>
-        <span>→</span>
-        <span className="text-gray-900 font-medium">Deployment {id.slice(0, 8)}</span>
+      <div className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+        <Link href="/" className="hover:text-slate-700">Overview</Link><span>›</span>
+        <Link href="/projects" className="hover:text-slate-700">Projects</Link><span>›</span>
+        <span className="font-medium text-slate-700">Deployment {id.slice(0, 8)}</span>
       </div>
 
-      {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-4">
-        <div className="flex items-start justify-between gap-4">
+      <section className="visa-card mb-4 overflow-hidden">
+        <div className="flex flex-col justify-between gap-5 px-6 py-6 sm:flex-row sm:items-start lg:px-7">
           <div>
-            <h1 className="text-lg font-bold text-gray-900 mb-1">Deployment #{deployment.attemptNumber}</h1>
-            <p className="text-sm text-gray-500 font-mono">{deployment.id}</p>
+            <div className="flex items-center gap-2">
+              <p className="visa-eyebrow">Deployment record</p>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500">#{deployment.attemptNumber}</span>
+            </div>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Deployment {id.slice(0, 8)}</h1>
+            <p className="visa-mono mt-1 text-[10px] text-slate-400">{deployment.id}</p>
           </div>
-          <span className={`text-sm font-medium border rounded-full px-3 py-1 whitespace-nowrap ${statusColor}`}>
-            {!isTerminal && '⟳ '}{statusLabel}
-          </span>
+          <div className="text-left sm:text-right">
+            <span className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-semibold ${statusColor}`}>
+              <span className="mr-1.5">{deployment.status === 'LIVE' ? '●' : '○'}</span>{statusLabel}
+            </span>
+            {deployment.completedAt && <p className="mt-2 text-[10px] text-slate-400">Completed {new Date(deployment.completedAt).toLocaleString()}</p>}
+          </div>
         </div>
-        {deployment.containerId && (
-          <p className="mt-2 text-xs text-gray-400">Container: <span className="font-mono">{deployment.containerId.slice(0, 12)}</span></p>
-        )}
-        {deployment.completedAt && (
-          <p className="text-xs text-gray-400">Completed: {new Date(deployment.completedAt).toLocaleString()}</p>
-        )}
-      </div>
 
-      {/* Stage tracker */}
+        {deployment.status === 'LIVE' && (
+          <div className="border-t border-emerald-100 bg-emerald-50/70 px-6 py-5 lg:px-7">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm">✓</div>
+                <div><p className="text-sm font-semibold text-emerald-900">Deployment verified and live</p><p className="text-xs text-emerald-700">Health check passed. The container is running and serving traffic.</p></div>
+              </div>
+              {deployment.containerId && <div className="text-[10px] text-emerald-700 sm:text-right"><p className="font-semibold uppercase tracking-wider">Container</p><p className="visa-mono mt-0.5">{deployment.containerId.slice(0, 12)}</p></div>}
+            </div>
+          </div>
+        )}
+      </section>
+
       <StageTracker stages={stages} status={deployment.status} />
 
-      {/* Pre-check results */}
-      {checks && checks.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Pre-Checks</h2>
-          <div className="flex flex-col gap-2">
-            {checks.map(c => (
-              <div key={c.name} className="flex items-start gap-3 text-sm">
-                <span className={`font-mono font-bold shrink-0 ${c.status === 'PASS' ? 'text-green-600' : c.status === 'WARN' ? 'text-yellow-600' : 'text-red-600'}`}>
-                  [{c.status}]
-                </span>
-                <span className="text-gray-600"><span className="font-medium text-gray-800">{c.name}:</span> {c.message}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Plan */}
-      {plan && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Deployment Plan</h2>
-          <div className="flex flex-col gap-1">
-            <p className="text-xs text-gray-500">Image: <span className="font-mono text-gray-800">{plan.imageTag}</span></p>
-            <p className="text-xs text-gray-500">Port: <span className="font-mono text-gray-800">{plan.port}</span> → host <span className="font-mono text-gray-800">{plan.port + 10000}</span></p>
-            <p className="text-xs text-gray-500">Health: <span className="font-mono text-gray-800">{plan.healthPath}</span></p>
-          </div>
-          <div className="mt-3 bg-gray-950 rounded-lg p-3 font-mono text-xs text-gray-300">
-            {plan.steps.map((s, i) => <div key={i} className="leading-5">$ {s}</div>)}
-          </div>
-        </div>
-      )}
-
-      {/* Gate 1: Approval */}
-      {deployment.status === 'AWAITING_APPROVAL' && (
-        <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-6 mb-4">
-          <h2 className="text-base font-semibold text-yellow-800 mb-1">Approval Required — Gate 1</h2>
-          <p className="text-sm text-yellow-700 mb-4">
-            Analysis and pre-checks are complete. Review the plan above and logs below, then approve or reject.
-          </p>
-          <div className="flex gap-3">
-            <button disabled={approving} onClick={() => handleApproval('DEPLOY', 'APPROVED')}
-              className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
-              {approving ? 'Submitting…' : '✓ Approve Deployment'}
-            </button>
-            <button disabled={approving} onClick={() => handleApproval('DEPLOY', 'REJECTED')}
-              className="bg-white hover:bg-red-50 disabled:opacity-50 text-red-600 border border-red-300 text-sm font-medium px-5 py-2 rounded-lg transition-colors">
-              ✕ Reject
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Diagnosis + Gate 2 */}
-      {deployment.status === 'FAILED' && diagnosis && (
-        <div className="bg-orange-50 border border-orange-300 rounded-xl p-6 mb-4">
-          <h2 className="text-base font-semibold text-orange-800 mb-2">Failure Diagnosed — Gate 2</h2>
-          <div className="mb-3 text-sm text-orange-900 space-y-1">
-            <p><span className="font-medium">Type:</span> {diagnosis.failureType} ({Math.round(diagnosis.confidence * 100)}% confidence)</p>
-            <p><span className="font-medium">Root cause:</span> {diagnosis.rootCause}</p>
-            <p><span className="font-medium">Rationale:</span> {diagnosis.rationale}</p>
-          </div>
-          {diagnosisCorrection?.diff && (
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-orange-700 mb-1">Proposed Correction Diff:</p>
-              <pre className="bg-gray-950 text-xs text-gray-300 rounded-lg p-3 overflow-x-auto whitespace-pre font-mono leading-5">
-                {diagnosisCorrection.diff.split('\n').map((line: string, i: number) => (
-                  <span key={i} className={line.startsWith('+') ? 'text-green-400' : line.startsWith('-') ? 'text-red-400' : ''}>{line}{'\n'}</span>
+      <div className="grid gap-4 lg:grid-cols-[1.25fr_.75fr]">
+        <div className="space-y-4">
+          {checks && checks.length > 0 && (
+            <section className="visa-card p-5">
+              <SectionTitle eyebrow="Safety checks" title="Pre-deployment assessment" />
+              <div className="mt-5 divide-y divide-slate-100">
+                {checks.map(c => (
+                  <div key={c.name} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                    <span className={`mt-0.5 flex h-5 min-w-5 items-center justify-center rounded-full text-[9px] font-bold ${c.status === 'PASS' ? 'bg-emerald-100 text-emerald-700' : c.status === 'WARN' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}`}>{c.status === 'PASS' ? '✓' : c.status === 'WARN' ? '!' : '×'}</span>
+                    <div><p className="text-xs font-semibold text-slate-800">{c.name}</p><p className="mt-0.5 text-[11px] leading-4 text-slate-500">{c.message}</p></div>
+                  </div>
                 ))}
-              </pre>
-            </div>
-          )}
-          {diagnosis.failureType === 'CORRECTABLE' ? (
-            <div className="flex gap-3">
-              <button disabled={approving} onClick={() => handleApproval('CORRECT', 'APPROVED')}
-                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
-                {approving ? 'Submitting…' : '↻ Approve Auto-Correction'}
-              </button>
-              <button disabled={approving} onClick={() => handleApproval('CORRECT', 'REJECTED')}
-                className="bg-white hover:bg-red-50 disabled:opacity-50 text-red-600 border border-red-300 text-sm font-medium px-5 py-2 rounded-lg transition-colors">
-                ✕ Reject — Terminate
-              </button>
-            </div>
-          ) : (
-            <p className="text-sm text-orange-700 font-medium">
-              {diagnosis.failureType === 'UNRECOVERABLE'
-                ? 'This failure cannot be auto-corrected. Manual investigation required.'
-                : 'Human intervention required — auto-correction not available for this failure type.'}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Live badge */}
-      {deployment.status === 'LIVE' && (
-        <div className="bg-green-50 border border-green-300 rounded-xl p-5 mb-4 flex items-center gap-3">
-          <span className="text-2xl">🟢</span>
-          <div>
-            <p className="text-green-800 font-semibold">Deployment is Live</p>
-            <p className="text-sm text-green-700">Health check passed. Container is running.</p>
-          </div>
-        </div>
-      )}
-
-      {/* Logs */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700">Deployment Logs</h2>
-          <span className="text-xs text-gray-400">{logs.length} lines</span>
-        </div>
-        <div className="bg-gray-950 rounded-b-xl font-mono text-xs text-gray-300 p-4 max-h-[32rem] overflow-y-auto">
-          {logs.length === 0
-            ? <p className="text-gray-600 italic">No logs yet…</p>
-            : logs.map(log => (
-              <div key={log.lineNumber} className="flex gap-3 leading-5">
-                <span className="text-gray-600 select-none w-8 text-right shrink-0">{log.lineNumber}</span>
-                <span className={`shrink-0 ${log.source.startsWith('check') ? 'text-yellow-500' : log.source === 'diagnosis' ? 'text-orange-400' : log.source === 'verify' ? 'text-cyan-400' : 'text-gray-500'}`}>[{log.source}]</span>
-                <span className="break-all">{log.content}</span>
               </div>
-            ))
-          }
-          <div ref={logsEndRef} />
+            </section>
+          )}
+
+          {plan && (
+            <section className="visa-card overflow-hidden">
+              <div className="p-5">
+                <SectionTitle eyebrow="Execution plan" title="Deployment plan" />
+                <div className="mt-5 grid grid-cols-3 gap-3">
+                  <Metric label="Image" value={plan.imageTag} mono />
+                  <Metric label="Port" value={`${plan.port} → ${plan.port + 10000}`} mono />
+                  <Metric label="Health" value={plan.healthPath} mono />
+                </div>
+              </div>
+              <div className="border-t border-slate-100 bg-slate-950 px-5 py-4">
+                {plan.steps.map((s, i) => <div key={i} className="visa-mono flex gap-3 text-[10px] leading-6 text-slate-300"><span className="text-slate-600">{String(i + 1).padStart(2, '0')}</span><span className="break-all">{s}</span></div>)}
+              </div>
+            </section>
+          )}
+
+          {deployment.status === 'AWAITING_APPROVAL' && (
+            <ApprovalCard title="Approval required" eyebrow="Gate 01 · Deploy" tone="amber" copy="Analysis and safety checks are complete. Review the execution plan before allowing VISA to perform the deployment." approving={approving} approveLabel="Approve deployment" onApprove={() => handleApproval('DEPLOY', 'APPROVED')} onReject={() => handleApproval('DEPLOY', 'REJECTED')} />
+          )}
+
+          {deployment.status === 'FAILED' && diagnosis && (
+            <section className="rounded-2xl border border-orange-200 bg-orange-50/70 p-5">
+              <p className="visa-eyebrow text-orange-700">Gate 02 · Recovery decision</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-orange-950">Failure diagnosed</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Metric label="Classification" value={diagnosis.failureType} />
+                <Metric label="Confidence" value={`${Math.round(diagnosis.confidence * 100)}%`} />
+              </div>
+              <div className="mt-4 space-y-2 text-xs text-orange-900">
+                <p><span className="font-semibold">Root cause:</span> {diagnosis.rootCause}</p>
+                <p><span className="font-semibold">Rationale:</span> {diagnosis.rationale}</p>
+              </div>
+              {diagnosisCorrection?.diff && <pre className="visa-mono mt-4 max-h-64 overflow-auto rounded-xl bg-slate-950 p-4 text-[10px] leading-5 text-slate-300">{diagnosisCorrection.diff}</pre>}
+              {diagnosis.failureType === 'CORRECTABLE' ? (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <button disabled={approving} onClick={() => handleApproval('CORRECT', 'APPROVED')} className="rounded-lg bg-slate-950 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50">{approving ? 'Submitting…' : 'Approve auto-correction'}</button>
+                  <button disabled={approving} onClick={() => handleApproval('CORRECT', 'REJECTED')} className="rounded-lg border border-orange-200 bg-white px-4 py-2.5 text-xs font-semibold text-orange-700 hover:bg-orange-100 disabled:opacity-50">Reject · Terminate</button>
+                </div>
+              ) : <p className="mt-4 text-xs font-semibold text-orange-700">Manual investigation required for this failure type.</p>}
+            </section>
+          )}
         </div>
+
+        <aside className="space-y-4">
+          <section className="visa-card overflow-hidden">
+            <div className="border-b border-slate-100 px-5 py-4">
+              <div className="flex items-center justify-between"><div><p className="visa-eyebrow">Runtime telemetry</p><h2 className="mt-1 text-sm font-semibold text-slate-900">Deployment logs</h2></div><span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-semibold text-slate-500">{logs.length} events</span></div>
+            </div>
+            <div className="h-[34rem] overflow-y-auto bg-slate-950 p-4">
+              {logs.length === 0 ? <p className="text-[10px] text-slate-600">Waiting for telemetry…</p> : logs.map(log => (
+                <div key={log.lineNumber} className="visa-mono flex gap-2 text-[9px] leading-5">
+                  <span className="w-5 shrink-0 text-right text-slate-700">{log.lineNumber}</span>
+                  <span className={`shrink-0 ${log.source.startsWith('check') ? 'text-amber-400' : log.source === 'diagnosis' ? 'text-orange-400' : log.source === 'verify' ? 'text-cyan-400' : 'text-slate-500'}`}>[{log.source}]</span>
+                  <span className="break-all text-slate-300">{log.content}</span>
+                </div>
+              ))}
+              <div ref={logsEndRef} />
+            </div>
+          </section>
+        </aside>
       </div>
     </PageShell>
   )
 }
 
-// ─── Stage Tracker ────────────────────────────────────────────────────────────
+function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return <div><p className="visa-eyebrow">{eyebrow}</p><h2 className="mt-1 text-sm font-semibold tracking-tight text-slate-900">{title}</h2></div>
+}
+
+function Metric({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  return <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3"><p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">{label}</p><p className={`mt-1 truncate text-xs font-semibold text-slate-800 ${mono ? 'visa-mono' : ''}`}>{value}</p></div>
+}
+
+function ApprovalCard({ title, eyebrow, tone, copy, approving, approveLabel, onApprove, onReject }: { title: string; eyebrow: string; tone: 'amber'; copy: string; approving: boolean; approveLabel: string; onApprove: () => void; onReject: () => void }) {
+  return <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5"><p className="visa-eyebrow text-amber-700">{eyebrow}</p><h2 className="mt-1 text-lg font-semibold tracking-tight text-amber-950">{title}</h2><p className="mt-2 max-w-2xl text-xs leading-5 text-amber-800">{copy}</p><div className="mt-5 flex flex-wrap gap-2"><button disabled={approving} onClick={onApprove} className="rounded-lg bg-slate-950 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50">{approving ? 'Submitting…' : `✓ ${approveLabel}`}</button><button disabled={approving} onClick={onReject} className="rounded-lg border border-amber-200 bg-white px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50">Reject · Terminate</button></div></section>
+}
 
 const PIPELINE_STAGES = [
   { key: 'analysis', label: 'Analysis' },
-  { key: 'pre-checks', label: 'Pre-Checks' },
+  { key: 'pre-checks', label: 'Pre-checks' },
   { key: 'deploy', label: 'Deploy' },
   { key: 'verification', label: 'Verify' },
   { key: 'diagnosis', label: 'Diagnose' },
@@ -301,47 +245,19 @@ const PIPELINE_STAGES = [
 ]
 
 function StageTracker({ stages, status }: { stages: Record<string, StageUpdate>; status: string }) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl px-5 py-4 mb-4">
-      <div className="flex items-center gap-1 flex-wrap">
-        {PIPELINE_STAGES.map((s, i) => {
-          const update = stages[s.key]
-          const isDone = update?.stageStatus === 'DONE' || (s.key === 'analysis' && ['CHECKING', 'AWAITING_APPROVAL', 'DEPLOYING', 'VERIFYING', 'LIVE', 'FAILED', 'CORRECTING', 'TERMINAL'].includes(status))
-          const isFailed = update?.stageStatus === 'FAILED'
-          const isRunning = update?.stageStatus === 'RUNNING'
-          const color = isFailed ? 'text-red-600 border-red-300 bg-red-50' : isDone ? 'text-green-700 border-green-300 bg-green-50' : isRunning ? 'text-blue-700 border-blue-300 bg-blue-50 animate-pulse' : 'text-gray-400 border-gray-200 bg-gray-50'
-          return (
-            <div key={s.key} className="flex items-center gap-1">
-              <span className={`text-xs border rounded px-2 py-0.5 font-medium ${color}`}>{s.label}</span>
-              {i < PIPELINE_STAGES.length - 1 && <span className="text-gray-300 text-xs">→</span>}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
+  const order = ['analysis', 'pre-checks', 'deploy', 'verification', 'diagnosis', 'correction', 'redeploy']
+  const statusIndex: Record<string, number> = { ANALYZING: 0, CHECKING: 1, AWAITING_APPROVAL: 1, DEPLOYING: 2, VERIFYING: 3, FAILED: 4, CORRECTING: 5, LIVE: 6, TERMINAL: 6 }
+  const current = statusIndex[status] ?? -1
+  return <div className="visa-card mb-4 overflow-hidden"><div className="flex items-center overflow-x-auto px-5 py-4"><div className="flex min-w-max items-center">{PIPELINE_STAGES.map((s, i) => {
+    const update = stages[s.key]
+    const isFailed = update?.stageStatus === 'FAILED'
+    const isDone = update?.stageStatus === 'DONE' || i < current || (status === 'LIVE' && i === 6)
+    const isRunning = update?.stageStatus === 'RUNNING' || i === current
+    const cls = isFailed ? 'border-rose-200 bg-rose-50 text-rose-700' : isDone ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : isRunning ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-slate-50 text-slate-400'
+    return <div key={s.key} className="flex items-center"><span className={`rounded-md border px-2.5 py-1.5 text-[10px] font-semibold ${cls}`}>{isDone ? '✓ ' : ''}{s.label}</span>{i < order.length - 1 && <span className="px-1.5 text-slate-300">›</span>}</div>
+  })}</div></div></div>
 }
 
-// ─── Shell ────────────────────────────────────────────────────────────────────
-
 function PageShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">V</span>
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 leading-none">VISA</h1>
-              <p className="text-xs text-gray-500 leading-none mt-0.5">Fast · Approved · Auto-Correctible</p>
-            </div>
-          </div>
-          <span className="text-xs text-gray-500 bg-blue-50 border border-blue-200 rounded px-2 py-1">Powered by IBM Bob 2.0</span>
-        </div>
-      </header>
-      <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
-    </div>
-  )
+  return <div className="min-h-screen"><header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl"><div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8"><Link href="/" className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-sm font-bold text-white">V</div><div><div className="text-sm font-bold tracking-tight text-slate-950">VISA</div><p className="text-[10px] text-slate-500">Deployment control plane</p></div></Link><div className="flex items-center gap-3"><Link href="/projects" className="rounded-lg px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900">Projects</Link><span className="flex items-center gap-2 text-[10px] font-medium text-slate-500"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Operational</span></div></div></header><main className="visa-grid min-h-[calc(100vh-4rem)] px-6 py-6 lg:px-8 lg:py-8"><div className="mx-auto max-w-7xl">{children}</div></main></div>
 }
