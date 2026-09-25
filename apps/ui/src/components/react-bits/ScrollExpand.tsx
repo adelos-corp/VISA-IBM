@@ -117,7 +117,7 @@ const ScrollExpand = ({
       stageH = c.stageHeight === 'viewport' ? window.innerHeight : (typeof c.stageHeight === 'number' ? c.stageHeight : (c.useWindowScroll ? window.innerHeight : root.clientHeight));
       if (stageH <= 0) return;
       stage.style.height = `${stageH}px`;
-      track.style.height = `${stageH * (1 + Math.max(0, c.scrollDistance) + Math.max(0, c.holdDistance))}px`;
+      track.style.height = `${root.clientHeight}px`;
 
       const w = root.clientWidth || stageH;
       stage.style.setProperty('--se-title-size', `${clamp(w * 0.075, 20, 84)}px`);
@@ -128,7 +128,7 @@ const ScrollExpand = ({
       if (!c.enabled) return 1;
       const span = stageH * Math.max(0.01, c.scrollDistance);
       if (c.useWindowScroll) {
-        const top = track.getBoundingClientRect().top;
+        const top = root.getBoundingClientRect().top;
         return clamp(-top / span, 0, 1);
       }
       return clamp(root.scrollTop / span, 0, 1);
