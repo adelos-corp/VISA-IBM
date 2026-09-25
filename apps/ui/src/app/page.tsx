@@ -7,24 +7,24 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_15%_0%,#123b7a_0%,#071a3d_32%,#020817_72%,#01040b_100%)] text-white">
       <Hero />
 
       <main className="mx-auto max-w-6xl px-4 pb-12">
         <StatsBar />
 
-        <section className="mb-8 rounded-md border border-slate-200 bg-white">
-          <div className="border-b border-slate-200 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">New deployment</h2>
-            <p className="mt-0.5 text-xs text-slate-500">Connect a Git repository or local project.</p>
+        <section className="mb-8 rounded-xl border border-white/10 bg-white/[0.045] shadow-2xl shadow-blue-950/20 backdrop-blur-sm">
+          <div className="border-b border-white/10 px-4 py-3">
+            <h2 className="text-sm font-semibold text-white">New deployment</h2>
+            <p className="mt-0.5 text-xs text-blue-100/60">Connect a Git repository or local project.</p>
           </div>
           <div className="p-4"><DeployForm /></div>
         </section>
 
         <section className="mb-8 rounded-md border border-slate-200 bg-white">
           <div className="border-b border-slate-200 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">Workflow</h2>
-            <p className="mt-0.5 text-xs text-slate-500">Controlled execution from source to verified live state.</p>
+            <h2 className="text-sm font-semibold text-white">Workflow</h2>
+            <p className="mt-0.5 text-xs text-blue-100/60">Controlled execution from source to verified live state.</p>
           </div>
           <div className="overflow-x-auto p-4"><PipelineSteps /></div>
         </section>
@@ -32,10 +32,10 @@ export default function Home() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">Recent deployments</h2>
-              <p className="mt-0.5 text-xs text-slate-500">Latest activity across managed projects.</p>
+              <h2 className="text-sm font-semibold text-white">Recent deployments</h2>
+              <p className="mt-0.5 text-xs text-blue-100/60">Latest activity across managed projects.</p>
             </div>
-            <Link href="/projects" className="text-xs font-medium text-blue-600 hover:underline">View projects →</Link>
+            <Link href="/projects" className="text-xs font-medium text-blue-300 hover:text-white hover:underline">View projects →</Link>
           </div>
           <EmptyState />
         </section>
