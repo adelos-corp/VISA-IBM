@@ -15,22 +15,20 @@ const STEPS = [
 ]
 
 const typeStyles: Record<string, string> = {
-  default: 'bg-slate-50 border-slate-200 text-slate-600',
-  bob: 'bg-blue-50/80 border-blue-200 text-blue-700',
-  approval: 'bg-amber-50 border-amber-200 text-amber-700',
-  danger: 'bg-rose-50 border-rose-200 text-rose-700',
-  success: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+  default: 'border-slate-200 bg-slate-50 text-slate-600',
+  bob: 'border-blue-200 bg-blue-50 text-blue-700',
+  approval: 'border-amber-200 bg-amber-50 text-amber-700',
+  danger: 'border-rose-200 bg-rose-50 text-rose-700',
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
 }
 
 export function PipelineSteps() {
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex min-w-max items-center gap-1">
       {STEPS.map((step, i) => (
-        <div key={step.label} className="flex items-center gap-1.5">
-          <span className={`rounded-md border px-2.5 py-1.5 text-[11px] font-semibold whitespace-nowrap ${typeStyles[step.type]}`}>
-            {step.label}
-          </span>
-          {i < STEPS.length - 1 && <span className="text-slate-300 text-xs">›</span>}
+        <div key={step.label} className="flex items-center gap-1">
+          <span className={`rounded border px-2 py-1 text-[10px] font-medium ${typeStyles[step.type]}`}>{step.label}</span>
+          {i < STEPS.length - 1 && <span className="text-slate-300">›</span>}
         </div>
       ))}
     </div>
