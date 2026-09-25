@@ -236,8 +236,36 @@ export async function resumeAfterCorrectionApproval(deploymentId: string): Promi
       return
     }
 
+    // Carry the approved correction into the deployment plan as well as the
+    // Dockerfile patch. This makes the correction explicit and guarantees the
+    // redeploy receives the corrected runtime configuration.
+    const correctedPlan: DeploymentPlan = {
+      ...plan,
+      envVars: correction.envVar && correction.envValue
+        ? { ...plan.envVars, [correction.envVar]: correction.envValue }
+        : plan.envVars,
+      steps: plan.steps.map(step =>
+        step.startsWith('docker run ')
+          ? step.replace(
+              'docker run -d',
+              correction.envVar && correction.envValue
+                ? `docker run -d -e ${correction.envVar}=${correction.envValue}`
+                : 'docker run -d'
+            )
+          : step
+      ),
+    }
+    savePlan(deploymentId, correctedPlan)
+
     // Redeploy with updated image
     log(deploymentId, 'visa', 'Rebuilding image after correction…')
+    if (correction.envVar && correction.envValue) {
+      log(
+        deploymentId,
+        'visa',
+        `Redeploy configuration: injecting approved ${correction.envVar} runtime value`
+      )
+    }
     transition(deploymentId, 'DEPLOYING')
     emitStage(deploymentId, 'redeploy', 'RUNNING')
 
@@ -245,11 +273,11 @@ export async function resumeAfterCorrectionApproval(deploymentId: string): Promi
     const oldDep = getDeploymentById(deploymentId)
     if (oldDep?.containerId) await stopContainer(oldDep.containerId)
 
-    await buildImage(project.localPath, plan.imageTag, line =>
+    await buildImage(project.localPath, correctedPlan.imageTag, line =>
       log(deploymentId, 'docker:build', line)
     )
 
-    const { containerId, port: hostPort } = await runContainer(plan.imageTag, plan, line =>
+    const { containerId, port: hostPort } = await runContainer(correctedPlan.imageTag, correctedPlan, line =>
       log(deploymentId, 'docker:run', line)
     )
     updateDeploymentStatus(deploymentId, 'DEPLOYING', { containerId })
