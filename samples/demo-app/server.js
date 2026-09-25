@@ -1,16 +1,29 @@
-// demo-app — a minimal Express server used to exercise the VISA pipeline.
-// It intentionally has a health endpoint, a configurable port, and a few
-// basic routes so VISA's analysis, build, and verification stages have
-// something real to work with.
+// demo-app — intentional failure scenario for the VISA pipeline demo.
+//
+// FAILURE: The app crashes on startup if APP_SECRET is missing.
+// This triggers:
+//   deployment → failure → Bob diagnosis → proposed correction (add env var)
+//   → approval → correction applied → redeployment → successful verification
 
 const express = require('express')
+
+// ── INTENTIONAL FAILURE TRIGGER ───────────────────────────────────────────────
+// The app refuses to start without APP_SECRET.
+// In the demo Dockerfile this env var is NOT set, so the first deploy fails.
+const APP_SECRET = process.env.APP_SECRET
+if (!APP_SECRET) {
+  console.error('[fatal] APP_SECRET environment variable is required but not set.')
+  console.error('[fatal] Set APP_SECRET=<any-value> to start the server.')
+  process.exit(1)
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 const app = express()
 const PORT = parseInt(process.env.PORT ?? '8080', 10)
 
 app.use(express.json())
 
-// Health endpoint — VISA verifier probes this
+// Health endpoint — probed by VISA verifier
 app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',

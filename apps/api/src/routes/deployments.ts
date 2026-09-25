@@ -4,99 +4,127 @@ import {
   getLogs,
   updateDeploymentStatus,
 } from '../store/deployments.store'
+import {
+  getPreCheckReport,
+  getPlan,
+  getDiagnosis,
+} from '../store/pipeline.store'
+import { registerSseClient, unregisterSseClient } from '../services/sse'
+import {
+  startPipeline,
+  resumeAfterDeployApproval,
+  resumeAfterCorrectionApproval,
+} from '../services/pipeline'
+import { getDb } from '../store/db'
+import { randomUUID } from 'crypto'
 
 export async function deploymentRoutes(app: FastifyInstance) {
   // Get deployment details
-  app.get<{ Params: { id: string } }>(
-    '/deployments/:id',
-    async (request, reply) => {
-      const deployment = getDeploymentById(request.params.id)
-      if (!deployment)
-        return reply.status(404).send({ error: 'Deployment not found' })
-      return { deployment }
-    }
-  )
+  app.get<{ Params: { id: string } }>('/deployments/:id', async (request, reply) => {
+    const d = getDeploymentById(request.params.id)
+    if (!d) return reply.status(404).send({ error: 'Deployment not found' })
+    return { deployment: d }
+  })
 
   // Get deployment logs
-  app.get<{ Params: { id: string } }>(
-    '/deployments/:id/logs',
-    async (request, reply) => {
-      const deployment = getDeploymentById(request.params.id)
-      if (!deployment)
-        return reply.status(404).send({ error: 'Deployment not found' })
-      const logs = getLogs(request.params.id)
-      return { deploymentId: request.params.id, logs }
-    }
-  )
+  app.get<{ Params: { id: string } }>('/deployments/:id/logs', async (request, reply) => {
+    const d = getDeploymentById(request.params.id)
+    if (!d) return reply.status(404).send({ error: 'Deployment not found' })
+    return { deploymentId: request.params.id, logs: getLogs(request.params.id) }
+  })
+
+  // Get pre-check report
+  app.get<{ Params: { id: string } }>('/deployments/:id/checks', async (request, reply) => {
+    const d = getDeploymentById(request.params.id)
+    if (!d) return reply.status(404).send({ error: 'Deployment not found' })
+    const report = getPreCheckReport(request.params.id)
+    return { deploymentId: request.params.id, report }
+  })
+
+  // Get deployment plan
+  app.get<{ Params: { id: string } }>('/deployments/:id/plan', async (request, reply) => {
+    const d = getDeploymentById(request.params.id)
+    if (!d) return reply.status(404).send({ error: 'Deployment not found' })
+    const plan = getPlan(request.params.id)
+    return { deploymentId: request.params.id, plan }
+  })
+
+  // Get diagnosis
+  app.get<{ Params: { id: string } }>('/deployments/:id/diagnosis', async (request, reply) => {
+    const d = getDeploymentById(request.params.id)
+    if (!d) return reply.status(404).send({ error: 'Deployment not found' })
+    const diagnosis = getDiagnosis(request.params.id)
+    return { deploymentId: request.params.id, diagnosis }
+  })
 
   // SSE stream for live deployment events
-  app.get<{ Params: { id: string } }>(
-    '/deployments/:id/events',
-    async (request, reply) => {
-      const deployment = getDeploymentById(request.params.id)
-      if (!deployment)
-        return reply.status(404).send({ error: 'Deployment not found' })
+  app.get<{ Params: { id: string } }>('/deployments/:id/events', async (request, reply) => {
+    const d = getDeploymentById(request.params.id)
+    if (!d) return reply.status(404).send({ error: 'Deployment not found' })
 
-      reply.raw.setHeader('Content-Type', 'text/event-stream')
-      reply.raw.setHeader('Cache-Control', 'no-cache')
-      reply.raw.setHeader('Connection', 'keep-alive')
-      reply.raw.setHeader('Access-Control-Allow-Origin', '*')
+    reply.raw.setHeader('Content-Type', 'text/event-stream')
+    reply.raw.setHeader('Cache-Control', 'no-cache')
+    reply.raw.setHeader('Connection', 'keep-alive')
+    reply.raw.setHeader('Access-Control-Allow-Origin', '*')
 
-      const send = (data: Record<string, unknown>) => {
-        reply.raw.write(`data: ${JSON.stringify(data)}\n\n`)
-      }
+    // Send current status immediately
+    reply.raw.write(`data: ${JSON.stringify({
+      type: 'status',
+      deploymentId: request.params.id,
+      payload: { status: d.status },
+      timestamp: new Date().toISOString(),
+    })}\n\n`)
 
-      // Send current status immediately
-      send({
-        type: 'status',
-        deploymentId: request.params.id,
-        payload: { status: deployment.status },
-        timestamp: new Date().toISOString(),
-      })
+    registerSseClient(request.params.id, reply.raw)
 
-      // Keep alive ping every 15s
-      const ping = setInterval(() => {
-        reply.raw.write(': ping\n\n')
-      }, 15000)
+    const ping = setInterval(() => { reply.raw.write(': ping\n\n') }, 15000)
+    request.raw.on('close', () => {
+      clearInterval(ping)
+      unregisterSseClient(request.params.id, reply.raw)
+    })
 
-      request.raw.on('close', () => {
-        clearInterval(ping)
-      })
+    await new Promise(() => {}) // hold connection
+  })
 
-      // Don't call reply.send() — SSE keeps connection open
-      await new Promise(() => {}) // hold
+  // Trigger pipeline run (fire-and-forget)
+  app.post<{ Params: { id: string } }>('/deployments/:id/run', async (request, reply) => {
+    const d = getDeploymentById(request.params.id)
+    if (!d) return reply.status(404).send({ error: 'Deployment not found' })
+    if (d.status !== 'PENDING') {
+      return reply.status(409).send({ error: `Cannot run from status ${d.status}` })
     }
-  )
+    // Fire and forget — don't await
+    setImmediate(() => startPipeline(request.params.id).catch(console.error))
+    return { started: true }
+  })
 
   // Submit approval
   app.post<{
     Params: { id: string }
     Body: { gate: 'DEPLOY' | 'CORRECT'; decision: 'APPROVED' | 'REJECTED'; notes?: string }
   }>('/deployments/:id/approve', async (request, reply) => {
-    const deployment = getDeploymentById(request.params.id)
-    if (!deployment)
-      return reply.status(404).send({ error: 'Deployment not found' })
+    const d = getDeploymentById(request.params.id)
+    if (!d) return reply.status(404).send({ error: 'Deployment not found' })
 
     const { gate, decision, notes } = request.body ?? {}
-    if (!gate || !decision)
-      return reply.status(400).send({ error: 'gate and decision are required' })
+    if (!gate || !decision) return reply.status(400).send({ error: 'gate and decision are required' })
 
-    const { getDb } = await import('../store/db')
-    const { randomUUID } = await import('crypto')
     const db = getDb()
     const approvalId = randomUUID()
     db.prepare(
-      `INSERT INTO approvals (id, deployment_id, gate, decision, user_notes)
-       VALUES (?, ?, ?, ?, ?)`
+      `INSERT INTO approvals (id, deployment_id, gate, decision, user_notes) VALUES (?, ?, ?, ?, ?)`
     ).run(approvalId, request.params.id, gate, decision, notes ?? null)
 
-    // Advance status on approval
-    if (gate === 'DEPLOY' && decision === 'APPROVED') {
-      updateDeploymentStatus(request.params.id, 'DEPLOYING')
-    } else if (gate === 'CORRECT' && decision === 'APPROVED') {
-      updateDeploymentStatus(request.params.id, 'CORRECTING')
-    } else if (decision === 'REJECTED') {
+    // Resume pipeline based on decision
+    if (decision === 'REJECTED') {
       updateDeploymentStatus(request.params.id, 'TERMINAL')
+      return { approvalId, gate, decision }
+    }
+
+    if (gate === 'DEPLOY' && decision === 'APPROVED') {
+      setImmediate(() => resumeAfterDeployApproval(request.params.id).catch(console.error))
+    } else if (gate === 'CORRECT' && decision === 'APPROVED') {
+      setImmediate(() => resumeAfterCorrectionApproval(request.params.id).catch(console.error))
     }
 
     return { approvalId, gate, decision }

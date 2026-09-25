@@ -97,15 +97,16 @@ export function getLogs(deploymentId: string): Array<{
   timestamp: string
 }> {
   const db = getDb()
-  return db
+  const rows = db
     .prepare(
       `SELECT line_number, source, content, timestamp FROM deployment_logs
        WHERE deployment_id = ? ORDER BY line_number ASC`
     )
-    .all(deploymentId) as Array<{
-    lineNumber: number
-    source: string
-    content: string
-    timestamp: string
-  }>
+    .all(deploymentId) as Array<Record<string, unknown>>
+  return rows.map(r => ({
+    lineNumber: r.line_number as number,
+    source: r.source as string,
+    content: r.content as string,
+    timestamp: r.timestamp as string,
+  }))
 }

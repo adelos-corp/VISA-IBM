@@ -122,6 +122,22 @@ export const deployments = {
     })
   },
 
+  run(id: string): Promise<{ started: boolean }> {
+    return request(`/deployments/${id}/run`, { method: 'POST' })
+  },
+
+  getChecks(id: string): Promise<{ deploymentId: string; report: { checks: Array<{ name: string; status: string; message: string }>; overallStatus: string } | null }> {
+    return request(`/deployments/${id}/checks`)
+  },
+
+  getPlan(id: string): Promise<{ deploymentId: string; plan: { imageTag: string; port: number; healthPath: string; envVars: Record<string, string>; steps: string[] } | null }> {
+    return request(`/deployments/${id}/plan`)
+  },
+
+  getDiagnosis(id: string): Promise<{ deploymentId: string; diagnosis: { id: string; failureType: string; rootCause: string; proposedCorrectionJson: string; confidence: number; rationale: string } | null }> {
+    return request(`/deployments/${id}/diagnosis`)
+  },
+
   /**
    * Opens an SSE connection to `/deployments/:id/events`.
    * Returns an EventSource. Call `.close()` when done.

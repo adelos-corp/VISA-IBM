@@ -4,6 +4,7 @@ import {
   createDeployment,
   listDeploymentsByProject,
 } from '../store/deployments.store'
+import { startPipeline } from '../services/pipeline'
 
 export async function projectRoutes(app: FastifyInstance) {
   // List all projects
@@ -65,6 +66,9 @@ export async function projectRoutes(app: FastifyInstance) {
         projectId: request.params.id,
         attemptNumber,
       })
+
+      // Auto-start the pipeline immediately
+      setImmediate(() => startPipeline(deployment.id).catch(console.error))
 
       return reply.status(201).send({ deployment })
     }
