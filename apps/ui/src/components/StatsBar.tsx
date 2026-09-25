@@ -25,17 +25,17 @@ export function StatsBar() {
   useEffect(() => { fetchStats().then(setStats).catch(() => {}) }, [])
 
   const cards = [
-    ['Deployments', stats.total, 'text-slate-900'],
-    ['Live', stats.live, 'text-emerald-600'],
-    ['Terminated', stats.failed, 'text-rose-600'],
-    ['Recovered', stats.corrected, 'text-blue-600'],
+    ['Deployments', stats.total, 'text-white'],
+    ['Live', stats.live, 'text-emerald-300'],
+    ['Terminated', stats.failed, 'text-rose-300'],
+    ['Recovered', stats.corrected, 'text-blue-300'],
   ]
 
   return (
-    <section className="mb-6 grid grid-cols-2 divide-x divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200 sm:grid-cols-4 sm:divide-y-0">
+    <section className="mb-6 grid grid-cols-2 divide-x divide-y divide-white/10 overflow-hidden rounded-md border border-white/10 sm:grid-cols-4 sm:divide-y-0">
       {cards.map(([label, value, tone]) => (
-        <div key={label as string} className="bg-white px-4 py-3">
-          <p className="text-xs text-slate-500">{label}</p>
+        <div key={label as string} className="bg-white/[0.045] px-4 py-3">
+          <p className="text-xs text-blue-100/60">{label}</p>
           <p className={`mt-1 text-lg font-semibold ${tone}`}>{value}</p>
         </div>
       ))}
