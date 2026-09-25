@@ -21,8 +21,8 @@ export default function Home() {
           <div className="p-4"><DeployForm /></div>
         </section>
 
-        <section className="mb-8 rounded-md border border-slate-200 bg-white">
-          <div className="border-b border-slate-200 px-4 py-3">
+        <section className="mb-8 rounded-xl border border-white/10 bg-white/[0.045] shadow-2xl shadow-blue-950/20 backdrop-blur-sm">
+          <div className="border-b border-white/10 px-4 py-3">
             <h2 className="text-sm font-semibold text-white">Workflow</h2>
             <p className="mt-0.5 text-xs text-blue-100/60">Controlled execution from source to verified live state.</p>
           </div>
