@@ -43,22 +43,6 @@ export default function ProjectsPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-sm font-bold text-white">V</div>
-            <div><div className="text-sm font-bold tracking-tight text-slate-950">VISA</div><p className="text-[10px] text-slate-500">Deployment control plane</p></div>
-          </Link>
-          <nav className="flex items-center gap-1">
-            <Link href="/" className="rounded-lg px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900">Overview</Link>
-            <Link href="/projects" className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-900">Projects</Link>
-            <span className="ml-3 flex items-center gap-2 text-[10px] font-medium text-slate-500">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Operational
-            </span>
-          </nav>
-        </div>
-      </header>
-
       <main className="visa-grid min-h-[calc(100vh-4rem)] px-6 py-8 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
