@@ -62,8 +62,6 @@
     linear-gradient(180deg, rgba(20, 48, 82, 0.18), rgba(7, 20, 38, 0.48)),
     rgba(7, 20, 38, 0.28);
   border-color: rgba(73, 118, 166, 0.22);
-  backdrop-filter: blur(3px) saturate(0.98);
-  -webkit-backdrop-filter: blur(3px) saturate(0.98);
 }
 
 .visa-navbar-glass::after {
