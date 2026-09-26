@@ -97,6 +97,7 @@ export default function DeploymentPage() {
   const statusColor = STATUS_COLOR[deployment.status] ?? STATUS_COLOR.PENDING
   const isTerminal = TERMINAL_STATUSES.has(deployment.status)
   const graniteThinking = stages.diagnosis?.stageStatus === 'RUNNING'
+  const graniteFallback = Boolean(stages.diagnosis?.usedFallback)
   let diagnosisCorrection: { diff?: string } | null = null
   if (diagnosis) {
     try { diagnosisCorrection = JSON.parse(diagnosis.proposedCorrectionJson) } catch { diagnosisCorrection = null }
@@ -149,7 +150,7 @@ export default function DeploymentPage() {
             working={graniteThinking}
             steps={['Reading deployment logs', 'Analyzing the failure', 'Preparing a bounded correction']}
             label="Granite is thinking…"
-            doneLabel="Granite analyzed the failure"
+            doneLabel={graniteFallback ? 'Fallback diagnosis completed' : 'Granite analyzed the failure'}
             glyph="sparkle"
             fontSize={14}
             breathPeriod={1.6}
