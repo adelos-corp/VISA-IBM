@@ -28,6 +28,7 @@ import { analyzeProject } from './analyzer'
 import { runPreChecks } from './preChecks'
 import { buildImage, runContainer, waitForContainerExit, stopContainer, getRunnerEndpoint, syncRunnerFile } from './docker'
 import { diagnose } from './diagnosis'
+import { diagnoseWithGranite } from './granite'
 import { applyCorrection } from './corrector'
 import { emitStatus, emitLog, emitStage } from './sse'
 
@@ -384,7 +385,7 @@ async function runDiagnosis(
 ): Promise<void> {
   transition(deploymentId, 'FAILED')
   emitStage(deploymentId, 'diagnosis', 'RUNNING')
-  log(deploymentId, 'visa', 'Running Bob diagnosis…')
+  log(deploymentId, 'visa', 'Running Granite 4.2 3B diagnosis…')
 
   const corrections = countCorrectionAttempts(deploymentId)
   if (corrections >= MAX_CORRECTIONS) {
@@ -393,12 +394,20 @@ async function runDiagnosis(
     return
   }
 
-  const result = diagnose({
+  const ai = await diagnoseWithGranite({
     containerLogs,
     projectPath,
-    envVarsNeeded: [],
-    envVarsProvided: plan.envVars,
+    fallback: () => diagnose({
+      containerLogs,
+      projectPath,
+      envVarsNeeded: [],
+      envVarsProvided: plan.envVars,
+    }),
   })
+  const result = ai.result
+  log(deploymentId, 'visa', ai.usedFallback
+    ? `Granite unavailable — deterministic diagnosis fallback used (${ai.modelUsed})`
+    : `Granite model: ${ai.modelUsed}`)
 
   const saved = saveDiagnosis({
     deploymentId,
