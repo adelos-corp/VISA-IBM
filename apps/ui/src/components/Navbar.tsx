@@ -17,7 +17,15 @@ export function Navbar() {
   return (
     <div className="fixed inset-x-0 top-4 z-[100] px-4 sm:px-6 lg:px-8 pointer-events-none">
       <div className="mx-auto max-w-6xl pointer-events-auto">
-        <GlassSurface width="100%" height={58} borderRadius={999} backgroundOpacity={0.22} saturation={0.8} distortionScale={-60} className="border border-white/10 shadow-2xl shadow-black/30">
+        <GlassSurface
+          width="100%"
+          height={58}
+          borderRadius={999}
+          backgroundOpacity={0.22}
+          saturation={0.8}
+          distortionScale={-60}
+          className="border border-[#2d4a72]/35 bg-[#071426]/20 shadow-2xl shadow-black/30"
+        >
           <nav className="flex h-full w-full items-center justify-between px-3 sm:px-4">
             <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-slate-100">
               <span className="flex h-7 w-7 items-center justify-center rounded-md border border-white/15 bg-white/[0.08] text-xs font-bold text-white">V</span>
