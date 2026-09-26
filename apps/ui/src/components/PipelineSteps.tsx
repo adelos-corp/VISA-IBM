@@ -15,11 +15,11 @@ const STEPS = [
 ]
 
 const typeStyles: Record<string, string> = {
-  default: 'border-slate-200 bg-slate-50 text-slate-600',
-  bob: 'border-blue-200 bg-blue-50 text-blue-700',
-  approval: 'border-amber-200 bg-amber-50 text-amber-700',
-  danger: 'border-rose-200 bg-rose-50 text-rose-700',
-  success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  default: 'border-white/10 bg-white/[0.04] text-slate-400',
+  bob: 'border-white/10 bg-white/[0.06] text-slate-200',
+  approval: 'border-white/15 bg-white/[0.08] text-slate-100',
+  danger: 'border-white/10 bg-white/[0.025] text-slate-500',
+  success: 'border-white/15 bg-white/[0.08] text-white',
 }
 
 export function PipelineSteps() {
@@ -28,7 +28,7 @@ export function PipelineSteps() {
       {STEPS.map((step, i) => (
         <div key={step.label} className="flex items-center gap-1">
           <span className={`rounded border px-2 py-1 text-[10px] font-medium ${typeStyles[step.type]}`}>{step.label}</span>
-          {i < STEPS.length - 1 && <span className="text-slate-300">›</span>}
+          {i < STEPS.length - 1 && <span className="text-slate-700">›</span>}
         </div>
       ))}
     </div>
