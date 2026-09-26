@@ -14,7 +14,8 @@
     "better-sqlite3": "^12.11.1",
     "execa": "^8.0.1",
     "fastify": "^4.28.1",
-    "simple-git": "^3.25.0"
+    "simple-git": "^3.25.0",
+    "@vercel/sandbox": "^3.3.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
