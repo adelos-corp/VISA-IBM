@@ -92,6 +92,7 @@ export interface DeploymentPlan {
   healthPath: string
   envVars: Record<string, string>
   steps: string[]
+  sourceUrl?: string
 }
 
 export function savePlan(deploymentId: string, plan: DeploymentPlan): string {
