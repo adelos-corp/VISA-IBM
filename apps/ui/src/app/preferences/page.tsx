@@ -3,89 +3,177 @@
 import { useEffect, useState } from 'react'
 
 type Preferences = {
-  theme: 'dark' | 'light'
+  theme: 'dark' | 'light' | 'system'
+  accent: 'blue' | 'neutral'
   compact: boolean
   reducedMotion: boolean
+  glassEffects: boolean
   notifications: boolean
+  deploymentConfirmation: boolean
+  autoCorrection: boolean
+  autoCorrectionLimit: number
+  defaultPort: number
+  environment: 'local-docker' | 'remote'
+  logRetention: 'session' | '7d' | '30d' | 'forever'
+  localPreferences: boolean
+  telemetry: boolean
 }
 
-const defaults: Preferences = { theme: 'dark', compact: false, reducedMotion: false, notifications: true }
+const defaults: Preferences = {
+  theme: 'dark',
+  accent: 'blue',
+  compact: false,
+  reducedMotion: false,
+  glassEffects: true,
+  notifications: true,
+  deploymentConfirmation: true,
+  autoCorrection: true,
+  autoCorrectionLimit: 1,
+  defaultPort: 18080,
+  environment: 'local-docker',
+  logRetention: '30d',
+  localPreferences: true,
+  telemetry: false,
+}
+
+function loadPreferences(): Preferences {
+  try {
+    const stored = JSON.parse(localStorage.getItem('visa-preferences') ?? '{}')
+    return { ...defaults, ...stored, theme: (stored.theme ?? localStorage.getItem('visa-theme') ?? 'dark') as Preferences['theme'] }
+  } catch {
+    return defaults
+  }
+}
 
 export default function PreferencesPage() {
   const [prefs, setPrefs] = useState<Preferences>(defaults)
   const [saved, setSaved] = useState(false)
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('visa-preferences')
-      if (stored) setPrefs({ ...defaults, ...JSON.parse(stored), theme: localStorage.getItem('visa-theme') === 'light' ? 'light' : 'dark' })
-    } catch {}
-  }, [])
+  useEffect(() => setPrefs(loadPreferences()), [])
 
-  function update(key: keyof Preferences) {
-    setPrefs(prev => ({ ...prev, [key]: !prev[key] }))
+  function toggle(key: keyof Preferences) {
+    setPrefs(prev => ({ ...prev, [key]: !prev[key] } as Preferences))
     setSaved(false)
   }
 
   function save() {
     localStorage.setItem('visa-preferences', JSON.stringify(prefs))
-    document.documentElement.dataset.theme = prefs.theme
-    localStorage.setItem('visa-theme', prefs.theme)
+    const theme = prefs.theme === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+      : prefs.theme
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('visa-theme', theme)
     document.documentElement.dataset.reducedMotion = prefs.reducedMotion ? 'true' : 'false'
     document.documentElement.dataset.compact = prefs.compact ? 'true' : 'false'
+    document.documentElement.dataset.glassEffects = prefs.glassEffects ? 'true' : 'false'
+    document.documentElement.dataset.accent = prefs.accent
     setSaved(true)
     window.setTimeout(() => setSaved(false), 1800)
   }
 
+  function clearLocalData() {
+    localStorage.removeItem('visa-preferences')
+    localStorage.removeItem('visa-theme')
+    setPrefs(defaults)
+    document.documentElement.dataset.theme = 'dark'
+    document.documentElement.dataset.reducedMotion = 'false'
+    document.documentElement.dataset.compact = 'false'
+    document.documentElement.dataset.glassEffects = 'true'
+    document.documentElement.dataset.accent = 'blue'
+  }
+
   return (
-    <main className="visa-grid min-h-screen px-4 pb-16 pt-32 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl">
-        <div className="max-w-2xl">
-          <p className="visa-eyebrow">Workspace</p>
-          <h1 className="mt-2 text-4xl font-semibold tracking-[-0.04em] text-white">Preferences</h1>
-          <p className="mt-4 text-sm leading-6 text-slate-400">Tune how the VISA dashboard behaves in this browser. These settings are local to this workspace.</p>
+    <main className="visa-grid min-h-screen px-4 pb-24 pt-32 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl">
+        <header className="max-w-3xl">
+          <p className="visa-eyebrow">Workspace / Preferences</p>
+          <h1 className="mt-4 text-[clamp(3.5rem,8vw,7rem)] font-semibold leading-[0.86] tracking-[-0.07em] text-white">
+            Make VISA<br /><span className="text-slate-500">yours.</span>
+          </h1>
+          <p className="mt-7 max-w-2xl text-base leading-7 text-slate-500">
+            Control how the workspace looks, behaves, and communicates with you. These settings live in this browser.
+          </p>
+        </header>
+
+        <div className="mt-20 space-y-4">
+          <section className="visa-settings-card">
+            <SettingsHeading eyebrow="01 / Appearance" title="Set the tone." copy="The visual system follows the same restrained, editorial language as the rest of VISA." />
+            <div className="visa-setting-row">
+              <div><h2>Theme</h2><p>Choose the visual theme for this workspace.</p></div>
+              <Segmented value={prefs.theme} options={['dark', 'light', 'system']} onChange={value => setPrefs(p => ({ ...p, theme: value as Preferences['theme']}))} />
+            </div>
+            <div className="visa-setting-row">
+              <div><h2>Accent</h2><p>Choose the visual accent used for highlights and active states.</p></div>
+              <Segmented value={prefs.accent} options={['blue', 'neutral']} onChange={value => setPrefs(p => ({ ...p, accent: value as Preferences['accent']}))} />
+            </div>
+          </section>
+
+          <section className="visa-settings-card">
+            <SettingsHeading eyebrow="02 / Interface" title="Less noise. More signal." copy="Keep the control plane focused on the decisions that matter." />
+            <SettingToggle title="Compact interface" copy="Reduce spacing across dashboard surfaces, lists, and deployment views." value={prefs.compact} onChange={() => toggle('compact')} />
+            <SettingToggle title="Reduce motion" copy="Minimize non-essential transitions and animated effects." value={prefs.reducedMotion} onChange={() => toggle('reducedMotion')} />
+            <SettingToggle title="Glass effects" copy="Keep the Liquid Glass treatment used throughout the interface." value={prefs.glassEffects} onChange={() => toggle('glassEffects')} last />
+          </section>
+
+          <section className="visa-settings-card">
+            <SettingsHeading eyebrow="03 / Deployment" title="Keep the human in the loop." copy="VISA can move quickly without turning consequential actions into invisible side effects." />
+            <SettingToggle title="Deployment notifications" copy="Show deployment status feedback and completion updates in the interface." value={prefs.notifications} onChange={() => toggle('notifications')} />
+            <SettingToggle title="Deployment confirmation" copy="Require explicit confirmation before a deployment begins." value={prefs.deploymentConfirmation} onChange={() => toggle('deploymentConfirmation')} />
+            <SettingToggle title="Auto-correction" copy="Allow VISA to propose and apply approved corrections after a recoverable failure." value={prefs.autoCorrection} onChange={() => toggle('autoCorrection')} />
+            <div className="visa-setting-row">
+              <div><h2>Auto-correction limit</h2><p>Maximum correction attempts for one deployment.</p></div>
+              <select value={prefs.autoCorrectionLimit} onChange={e => setPrefs(p => ({ ...p, autoCorrectionLimit: Number(e.target.value)}))} className="visa-select">
+                <option value={1}>1 attempt</option><option value={2}>2 attempts</option><option value={3}>3 attempts</option>
+              </select>
+            </div>
+          </section>
+
+          <section className="visa-settings-card">
+            <SettingsHeading eyebrow="04 / Workspace" title="Choose the defaults." copy="These values shape new local deployment sessions." />
+            <div className="visa-setting-row">
+              <div><h2>Default deployment port</h2><p>Host port used for local deployment environments.</p></div>
+              <input type="number" value={prefs.defaultPort} onChange={e => setPrefs(p => ({ ...p, defaultPort: Number(e.target.value)}))} className="visa-input w-28" />
+            </div>
+            <div className="visa-setting-row">
+              <div><h2>Deployment environment</h2><p>Environment used when creating a new deployment.</p></div>
+              <Segmented value={prefs.environment} options={['local-docker', 'remote']} labels={{'local-docker':'Local Docker',remote:'Remote'}} onChange={value => setPrefs(p => ({ ...p, environment: value as Preferences['environment']}))} />
+            </div>
+            <div className="visa-setting-row">
+              <div><h2>Keep deployment logs</h2><p>Choose how long deployment logs remain available locally.</p></div>
+              <Segmented value={prefs.logRetention} options={['session','7d','30d','forever']} labels={{session:'Session','7d':'7 days','30d':'30 days',forever:'Forever'}} onChange={value => setPrefs(p => ({ ...p, logRetention: value as Preferences['logRetention']}))} />
+            </div>
+          </section>
+
+          <section className="visa-settings-card">
+            <SettingsHeading eyebrow="05 / Privacy & data" title="Keep control local." copy="VISA separates browser preferences from project and deployment data." />
+            <SettingToggle title="Local preferences" copy="Store interface preferences in this browser." value={prefs.localPreferences} onChange={() => toggle('localPreferences')} />
+            <SettingToggle title="Anonymous telemetry" copy="Share anonymous usage information to help improve VISA." value={prefs.telemetry} onChange={() => toggle('telemetry')} last />
+            <div className="visa-danger-row">
+              <div><h2>Clear local data</h2><p>Remove saved VISA preferences and workspace state from this browser.</p></div>
+              <button type="button" onClick={clearLocalData} className="visa-danger-button">Clear local data</button>
+            </div>
+          </section>
         </div>
 
-        <section className="mt-10 visa-card overflow-hidden">
-          <div className="flex items-center justify-between gap-6 border-b border-white/10 px-6 py-5 sm:px-8">
-            <div>
-              <h2 className="text-sm font-semibold text-white">Appearance</h2>
-              <p className="mt-1 text-xs leading-5 text-slate-500">Choose the visual theme for this browser.</p>
-            </div>
-            <div className="flex rounded-lg border border-white/10 bg-white/[0.03] p-1">
-              {(['dark', 'light'] as const).map(mode => (
-                <button key={mode} type="button" onClick={() => { setPrefs(prev => ({ ...prev, theme: mode })); setSaved(false) }} className={`rounded-md px-3 py-1.5 text-[11px] font-medium capitalize transition ${prefs.theme === mode ? 'bg-white text-slate-950' : 'text-slate-500 hover:text-slate-200'}`}>{mode}</button>
-              ))}
-            </div>
+        <section className="mt-4 border-t border-white/10 pt-10">
+          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+            <div><p className="visa-eyebrow">VISA / 1.0.0</p><p className="mt-2 text-xs text-slate-600">Deployment engine: Docker · AI agent: IBM Bob 2.0 · Under ADELOS Corp.</p></div>
+            <button onClick={save} className="rounded-full bg-white px-6 py-3 text-xs font-semibold text-slate-950 transition hover:bg-slate-200">{saved ? 'Saved' : 'Save preferences'}</button>
           </div>
-
-          {[
-            ['compact', 'Compact interface', 'Reduce spacing in dashboard surfaces and lists.'],
-            ['reducedMotion', 'Reduce motion', 'Disable non-essential transitions and animated effects.'],
-            ['notifications', 'Deployment notifications', 'Keep deployment status feedback enabled in the interface.'],
-          ].map(([key, title, copy]) => (
-            <div key={key} className="flex items-center justify-between gap-6 border-b border-white/10 px-6 py-5 last:border-b-0 sm:px-8">
-              <div>
-                <h2 className="text-sm font-semibold text-white">{title}</h2>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{copy}</p>
-              </div>
-              <button
-                type="button"
-                aria-pressed={prefs[key as 'compact' | 'reducedMotion' | 'notifications']}
-                onClick={() => update(key as 'compact' | 'reducedMotion' | 'notifications')}
-                className={`relative h-6 w-11 shrink-0 rounded-full border transition ${prefs[key as 'compact' | 'reducedMotion' | 'notifications'] ? 'border-white/30 bg-white/20' : 'border-white/10 bg-white/[0.04]'}`}
-              >
-                <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${prefs[key as 'compact' | 'reducedMotion' | 'notifications'] ? 'left-6' : 'left-1'}`} />
-              </button>
-            </div>
-          ))}
         </section>
-
-        <div className="mt-5 flex items-center justify-between">
-          <p className="text-xs text-slate-600">Changes are stored in local browser storage.</p>
-          <button onClick={save} className="rounded-lg bg-white px-4 py-2.5 text-xs font-semibold text-slate-950 hover:bg-slate-200">{saved ? 'Saved' : 'Save preferences'}</button>
-        </div>
       </div>
     </main>
   )
+}
+
+function SettingsHeading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
+  return <div className="border-b border-white/10 px-6 pb-7 pt-7 sm:px-8"><p className="visa-eyebrow">{eyebrow}</p><h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-white">{title}</h2><p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500">{copy}</p></div>
+}
+
+function SettingToggle({ title, copy, value, onChange, last = false }: { title: string; copy: string; value: boolean; onChange: () => void; last?: boolean }) {
+  return <div className={`visa-setting-row ${last ? '' : 'border-b border-white/10'}`}><div><h2>{title}</h2><p>{copy}</p></div><button type="button" aria-pressed={value} onClick={onChange} className={`visa-toggle ${value ? 'is-on' : ''}`}><span /></button></div>
+}
+
+function Segmented({ value, options, labels = {}, onChange }: { value: string; options: string[]; labels?: Record<string,string>; onChange: (value: string) => void }) {
+  return <div className="visa-segmented">{options.map(option => <button key={option} type="button" aria-pressed={value === option} onClick={() => onChange(option)} className={value === option ? 'is-active' : ''}>{labels[option] ?? option}</button>)}</div>
 }
