@@ -88,7 +88,7 @@ button, input { font: inherit; }
 [data-theme="light"] [class*="text-slate-600"] { color: #8c959f !important; }
 [data-theme="light"] [class*="border-white/10"],
 [data-theme="light"] [class*="border-white/15"] { border-color: #d8dee4 !important; }
-[data-theme="light"] [class*="bg-white/\["] { background-color: rgba(255,255,255,0.72) !important; }
+[data-theme="light"] [class*="bg-white/"] { background-color: rgba(255,255,255,0.72) !important; }
 [data-theme="light"] [class*="bg-black/"] { background-color: rgba(246,248,250,0.9) !important; }
 [data-theme="light"] [class*="shadow-black"] { --tw-shadow-color: rgba(31,35,40,0.08) !important; }
 
@@ -147,4 +147,13 @@ button, input { font: inherit; }
 [data-reduced-motion="true"] .glass-surface__content {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+
+[data-theme="light"] [class*="bg-[#02040a]"] {
+  background: #f6f8fa !important;
+}
+
+[data-theme="light"] [class*="bg-[radial-gradient"] {
+  background-image: radial-gradient(circle at 50% 0%, #ffffff 0%, #f6f8fa 55%, #eef1f4 100%) !important;
 }
