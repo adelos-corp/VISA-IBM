@@ -94,20 +94,47 @@ function splitRunnerContainer(containerId: string) {
 
 export async function waitForContainerExit(containerId: string, timeoutMs: number, onLog: (line: string) => void) {
   const logs: string[] = []
-  await new Promise(resolve => setTimeout(resolve, timeoutMs))
-  if (USE_VERCEL_SANDBOX) {
-    const { sandboxName, dockerId } = splitRunnerContainer(containerId)
-    const sandbox = await getSandbox(sandboxName)
-    const result = await sandbox.runCommand({ cmd: 'docker', args: ['logs', '--tail=200', dockerId] })
-    const output = (await result.stdout()) + '\n' + (await result.stderr())
-    output.split('\n').filter(Boolean).forEach(line => { logs.push(line); onLog(line) })
-    const inspect = await sandbox.runCommand({ cmd: 'docker', args: ['inspect', '--format={{.State.ExitCode}}', dockerId] })
-    return { exitCode: parseInt((await inspect.stdout()).trim() || '1', 10), logs }
+  const startedAt = Date.now()
+  const pollMs = 250
+
+  while (Date.now() - startedAt < timeoutMs) {
+    let running = false
+    let exitCode = 0
+
+    if (USE_VERCEL_SANDBOX) {
+      const { sandboxName, dockerId } = splitRunnerContainer(containerId)
+      const sandbox = await getSandbox(sandboxName)
+      const inspect = await sandbox.runCommand({ cmd: 'docker', args: ['inspect', '--format={{.State.Running}}|{{.State.ExitCode}}', dockerId] })
+      const [runningText, exitText] = (await inspect.stdout()).trim().split('|')
+      running = runningText === 'true'
+      exitCode = parseInt(exitText || '0', 10)
+      if (!running) {
+        const result = await sandbox.runCommand({ cmd: 'docker', args: ['logs', '--tail=200', dockerId] })
+        const output = (await result.stdout()) + '\n' + (await result.stderr())
+        output.split('\n').filter(Boolean).forEach(line => { logs.push(line); onLog(line) })
+        return { exitCode, logs }
+      }
+    } else {
+      const inspect = await execa('docker', ['inspect', '--format={{.State.Running}}|{{.State.ExitCode}}', containerId], { reject: false })
+      const [runningText, exitText] = (inspect.stdout ?? '').trim().split('|')
+      running = runningText === 'true'
+      exitCode = parseInt(exitText || '0', 10)
+      if (!running) {
+        const result = await execa('docker', ['logs', '--tail=200', containerId], { reject: false, all: true })
+        ;(result.all ?? '').split('\n').filter(Boolean).forEach(line => { logs.push(line); onLog(line) })
+        return { exitCode, logs }
+      }
+    }
+
+    if (running) {
+      await new Promise(resolve => setTimeout(resolve, pollMs))
+    } else {
+      return { exitCode, logs }
+    }
   }
-  const result = await execa('docker', ['logs', '--tail=200', containerId], { reject: false, all: true })
-  ;(result.all ?? '').split('\n').filter(Boolean).forEach(line => { logs.push(line); onLog(line) })
-  const inspect = await execa('docker', ['inspect', '--format={{.State.ExitCode}}', containerId], { reject: false })
-  return { exitCode: parseInt(inspect.stdout?.trim() ?? '1', 10), logs }
+
+  onLog(`Container remained running after ${timeoutMs}ms — proceeding to health verification`)
+  return { exitCode: 0, logs }
 }
 
 export async function stopContainer(containerId: string): Promise<void> {
