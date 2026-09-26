@@ -1,4 +1,5 @@
 import { execa } from 'execa'
+import net from 'net'
 import { Sandbox } from '@vercel/sandbox'
 import type { DeploymentPlan } from '../store/pipeline.store'
 
@@ -25,6 +26,20 @@ async function ensureDocker(sandbox: Sandbox): Promise<void> {
   if (daemon.exitCode !== 0) throw new Error('Docker daemon failed to start: ' + await daemon.stderr())
   const ready = await sandbox.runCommand({ cmd: 'sh', args: ['-lc', 'for i in $(seq 1 30); do sudo docker info >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1'] })
   if (ready.exitCode !== 0) throw new Error('Docker daemon did not become ready')
+}
+
+
+async function findAvailablePort(start: number, end = start + 50): Promise<number> {
+  for (let port = start; port <= end; port++) {
+    const available = await new Promise<boolean>((resolve) => {
+      const server = net.createServer()
+      server.once('error', () => resolve(false))
+      server.once('listening', () => server.close(() => resolve(true)))
+      server.listen(port, '127.0.0.1')
+    })
+    if (available) return port
+  }
+  throw new Error(`No available host port found between ${start} and ${end}`)
 }
 
 async function prepareSandbox(name: string, port: number): Promise<Sandbox> {
@@ -60,7 +75,9 @@ export async function buildImage(projectPath: string, tag: string, onLog: (line:
 }
 
 export async function runContainer(tag: string, plan: DeploymentPlan, onLog: (line: string) => void): Promise<DockerRunResult> {
-  const hostPort = plan.port + 10000
+  const hostPort = USE_VERCEL_SANDBOX
+    ? plan.port + 10000
+    : await findAvailablePort(plan.port + 10000)
   const envArgs: string[] = []
   for (const [key, value] of Object.entries(plan.envVars)) envArgs.push('-e', key + '=' + value)
   const containerName = tag.replace(/[^a-z0-9-]/g, '-')
