@@ -7,7 +7,7 @@ export function Footer() {
         <div>
           <p className="text-xs font-semibold text-slate-300">VISA</p>
           <p className="mt-1 text-[11px] text-slate-600">Fast · Approved · Auto-Correctible · Verified</p>
-          <p className="mt-4 text-xs text-slate-500">Made by Akhil Anand</p>
+          <p className="mt-4 text-xs text-slate-500">Made by Akhil Anand using IBM Bob 2.0</p>
           <p className="mt-1 text-[11px] text-slate-600">Under ADELOS Corp.</p>
         </div>
 
