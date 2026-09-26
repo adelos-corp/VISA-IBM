@@ -26,10 +26,12 @@ export function Navbar() {
           className="visa-navbar-glass border border-[#355b88]/30 shadow-2xl shadow-black/30"
         >
           <nav className="flex h-full w-full items-center justify-between px-3 sm:px-4">
-            <Link href="/" className="flex items-center gap-2.5 text-sm font-semibold text-slate-100">
-              <img src="/adelo-logo.svg" alt="ADELOS Corp." className="h-7 w-8 object-contain" />
-              <span>VISA</span>
-            </Link>
+            <div className="flex items-center gap-2.5">
+              <a href="https://adeloscorp.com" target="_blank" rel="noreferrer" aria-label="ADELOS Corp." title="ADELOS Corp.">
+                <img src="/adelo-logo.svg" alt="ADELOS Corp." className="h-7 w-8 object-contain transition-opacity hover:opacity-80" />
+              </a>
+              <Link href="/" className="text-sm font-semibold text-slate-100">VISA</Link>
+            </div>
 
             <div className="flex items-center gap-1 text-xs">
               {links.map((link) => {
