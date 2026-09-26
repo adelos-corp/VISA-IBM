@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import GlassSurface from '@/components/react-bits/GlassSurface'
 
@@ -12,6 +13,12 @@ const links = [
 
 export function Navbar() {
   const pathname = usePathname()
+
+  useEffect(() => {
+    if (pathname !== '/' || sessionStorage.getItem('visa-scroll-home') !== 'true') return
+    sessionStorage.removeItem('visa-scroll-home')
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+  }, [pathname])
 
   function handleHomeClick(event: React.MouseEvent<HTMLAnchorElement>) {
     if (pathname === '/') {
