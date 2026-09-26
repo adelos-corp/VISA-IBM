@@ -13,7 +13,7 @@ export default function ContactPage() {
   }
 
   return (
-    <main className="visa-grid min-h-screen px-4 pb-16 pt-32 sm:px-6 lg:px-8">
+    <main className="visa-grid min-h-screen px-4 pb-24 pt-32 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
         <div className="max-w-2xl">
           <p className="visa-eyebrow">Contact</p>
