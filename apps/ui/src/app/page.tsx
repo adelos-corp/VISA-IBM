@@ -1,6 +1,5 @@
 import { PipelineSteps } from '@/components/PipelineSteps'
 import { EmptyState } from '@/components/EmptyState'
-import { DeployForm } from '@/components/DeployForm'
 import { StatsBar } from '@/components/StatsBar'
 import { Hero } from '@/components/Hero'
 import Link from 'next/link'
@@ -42,13 +41,53 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mb-8 rounded-2xl border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20 backdrop-blur-sm">
-          <div className="border-b border-white/10 px-5 py-4 sm:px-6">
-            <p className="visa-eyebrow">Deploy</p>
-            <h2 className="mt-1 text-base font-semibold text-white">New deployment</h2>
-            <p className="mt-1 text-xs text-slate-500">Connect a Git repository or local project.</p>
+        <section className="mb-8 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] shadow-2xl shadow-black/20 backdrop-blur-sm">
+          <div className="border-b border-white/10 px-5 py-5 sm:px-6">
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+              <div>
+                <p className="visa-eyebrow">Runtime intelligence</p>
+                <h2 className="mt-1 text-base font-semibold text-white">Deployment orchestration layer</h2>
+                <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500">
+                  VISA turns repository state, deployment policy, runtime signals, and verification results into a controlled execution graph.
+                </p>
+              </div>
+              <Link href="/deploy" className="shrink-0 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-semibold text-slate-300 hover:bg-white/[0.08]">
+                Open deployment center →
+              </Link>
+            </div>
           </div>
-          <div className="p-5 sm:p-6"><DeployForm /></div>
+
+          <div className="grid divide-y divide-white/10 md:grid-cols-3 md:divide-x md:divide-y-0">
+            {[
+              ['Artifact inspection', 'SOURCE → PLAN', 'Repository structure, runtime requirements, dependencies, and deployment metadata are normalized before execution.'],
+              ['Policy evaluation', 'PLAN → APPROVAL', 'Safety checks and the proposed execution plan are evaluated before a consequential action can proceed.'],
+              ['Runtime recovery', 'FAILURE → VERIFY', 'Failure telemetry is classified, recoverable corrections are proposed, and the resulting deployment is verified.'],
+            ].map(([title, flow, copy]) => (
+              <div key={title} className="p-5 sm:p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-slate-200">{title}</h3>
+                  <span className="visa-mono text-[9px] tracking-wide text-slate-600">{flow}</span>
+                </div>
+                <p className="mt-3 text-xs leading-5 text-slate-500">{copy}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-white/10 bg-black/20 px-5 py-4 sm:px-6">
+            <div className="grid gap-3 font-mono text-[10px] sm:grid-cols-4">
+              {[
+                ['SOURCE', 'repository snapshot'],
+                ['POLICY', 'human approval gate'],
+                ['RUNTIME', 'health + log telemetry'],
+                ['RECOVERY', 'bounded correction loop'],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <p className="text-slate-600">{label}</p>
+                  <p className="mt-1 text-slate-400">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="mb-8 grid gap-3 md:grid-cols-3">
