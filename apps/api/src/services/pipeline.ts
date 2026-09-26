@@ -2,6 +2,8 @@
 // Called on POST /deployments/:id/run and resumed after approvals.
 
 import path from 'path'
+import fs from 'fs'
+import { simpleGit } from 'simple-git'
 import { getProjectById } from '../store/projects.store'
 import {
   getDeploymentById,
@@ -24,7 +26,7 @@ import {
 } from '../store/pipeline.store'
 import { analyzeProject } from './analyzer'
 import { runPreChecks } from './preChecks'
-import { buildImage, runContainer, waitForContainerExit, stopContainer } from './docker'
+import { buildImage, runContainer, waitForContainerExit, stopContainer, getRunnerEndpoint, syncRunnerFile } from './docker'
 import { verifyHealth } from './verifier'
 import { diagnose } from './diagnosis'
 import { applyCorrection } from './corrector'
