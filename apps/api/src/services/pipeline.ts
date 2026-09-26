@@ -33,6 +33,7 @@ import { applyCorrection } from './corrector'
 import { emitStatus, emitLog, emitStage } from './sse'
 
 const MAX_CORRECTIONS = 1
+const CONTAINER_STARTUP_GRACE_MS = Number(process.env.CONTAINER_STARTUP_GRACE_MS ?? '3000')
 
 // ─── Logger helper ────────────────────────────────────────────────────────────
 
@@ -149,7 +150,10 @@ export async function resumeAfterDeployApproval(deploymentId: string): Promise<v
     log(deploymentId, 'visa', `Building Docker image: ${plan.imageTag}`)
 
     const buildProjectPath = await resolveProjectPath(project, deploymentId)
-    await buildImage(buildProjectPath, plan.imageTag, line =>
+    const buildSource = process.env.VERCEL === '1' || process.env.RUNNER_MODE === 'vercel-sandbox'
+      ? project.gitUrl!
+      : buildProjectPath
+    await buildImage(buildSource, plan.imageTag, line =>
       log(deploymentId, 'docker:build', line)
     )
 
@@ -159,9 +163,8 @@ export async function resumeAfterDeployApproval(deploymentId: string): Promise<v
     )
     updateDeploymentStatus(deploymentId, 'DEPLOYING', { containerId })
 
-    // Wait up to 8s for container to possibly exit (fast startup failures)
-    log(deploymentId, 'visa', `Waiting for container to stabilise (${containerId.slice(0, 12)})…`)
-    const { exitCode, logs: containerLogs } = await waitForContainerExit(containerId, 8000, line =>
+    log(deploymentId, 'visa', `Watching container startup (${containerId.slice(0, 12)})…`)
+    const { exitCode, logs: containerLogs } = await waitForContainerExit(containerId, CONTAINER_STARTUP_GRACE_MS, line =>
       log(deploymentId, 'container', line)
     )
 
@@ -293,7 +296,7 @@ export async function resumeAfterCorrectionApproval(deploymentId: string): Promi
     )
     updateDeploymentStatus(deploymentId, 'DEPLOYING', { containerId })
 
-    const { exitCode, logs: containerLogs } = await waitForContainerExit(containerId, 8000, line =>
+    const { exitCode, logs: containerLogs } = await waitForContainerExit(containerId, CONTAINER_STARTUP_GRACE_MS, line =>
       log(deploymentId, 'container', line)
     )
 
