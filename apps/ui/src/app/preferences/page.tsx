@@ -29,6 +29,7 @@ export default function PreferencesPage() {
   function save() {
     localStorage.setItem('visa-preferences', JSON.stringify(prefs))
     document.documentElement.dataset.reducedMotion = prefs.reducedMotion ? 'true' : 'false'
+    document.documentElement.dataset.compact = prefs.compact ? 'true' : 'false'
     setSaved(true)
     window.setTimeout(() => setSaved(false), 1800)
   }
