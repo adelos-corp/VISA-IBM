@@ -57,3 +57,94 @@ button, input { font: inherit; }
   scroll-behavior: auto !important;
   transition-duration: 0.01ms !important;
 }
+
+
+/* Light theme */
+[data-theme="light"] html {
+  background: #f6f8fa;
+}
+
+[data-theme="light"] body {
+  color: #1f2328;
+  background: #f6f8fa;
+}
+
+[data-theme="light"] .visa-grid {
+  background: radial-gradient(circle at 50% 0%, #ffffff 0%, #f6f8fa 52%, #eef1f4 100%);
+}
+
+[data-theme="light"] .visa-card {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: #d8dee4 !important;
+  box-shadow: 0 10px 30px rgba(31, 35, 40, 0.05);
+}
+
+[data-theme="light"] [class*="text-white"] { color: #1f2328 !important; }
+[data-theme="light"] [class*="text-slate-100"] { color: #24292f !important; }
+[data-theme="light"] [class*="text-slate-200"] { color: #343a40 !important; }
+[data-theme="light"] [class*="text-slate-300"] { color: #57606a !important; }
+[data-theme="light"] [class*="text-slate-400"] { color: #656d76 !important; }
+[data-theme="light"] [class*="text-slate-500"] { color: #656d76 !important; }
+[data-theme="light"] [class*="text-slate-600"] { color: #8c959f !important; }
+[data-theme="light"] [class*="border-white/10"],
+[data-theme="light"] [class*="border-white/15"] { border-color: #d8dee4 !important; }
+[data-theme="light"] [class*="bg-white/\["] { background-color: rgba(255,255,255,0.72) !important; }
+[data-theme="light"] [class*="bg-black/"] { background-color: rgba(246,248,250,0.9) !important; }
+[data-theme="light"] [class*="shadow-black"] { --tw-shadow-color: rgba(31,35,40,0.08) !important; }
+
+[data-theme="light"] input {
+  color: #1f2328 !important;
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+}
+
+[data-theme="light"] ::placeholder { color: #8c959f !important; }
+
+[data-theme="light"] footer {
+  background: rgba(255,255,255,0.72);
+  border-color: #d8dee4;
+}
+
+[data-theme="light"] .glass-surface--svg,
+[data-theme="light"] .glass-surface--fallback {
+  background: rgba(255,255,255,0.72) !important;
+  border-color: rgba(31,35,40,0.12) !important;
+  box-shadow: 0 8px 28px rgba(31,35,40,0.08) !important;
+}
+
+[data-theme="light"] .glass-surface--fallback {
+  backdrop-filter: blur(12px) saturate(1.1) brightness(1) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.1) brightness(1) !important;
+}
+
+[data-theme="light"] .glass-surface--svg {
+  backdrop-filter: var(--filter-id, none) saturate(1) !important;
+}
+
+/* Reduced motion also removes the decorative glass treatment. */
+[data-reduced-motion="true"] .glass-surface,
+[data-reduced-motion="true"] .glass-surface--svg,
+[data-reduced-motion="true"] .glass-surface--fallback {
+  background: rgba(15, 23, 42, 0.96) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+
+[data-theme="light"][data-reduced-motion="true"] .glass-surface,
+[data-theme="light"][data-reduced-motion="true"] .glass-surface--svg,
+[data-theme="light"][data-reduced-motion="true"] .glass-surface--fallback {
+  background: #ffffff !important;
+  border-color: #d8dee4 !important;
+}
+
+[data-reduced-motion="true"] .glass-surface__filter {
+  display: none !important;
+}
+
+[data-reduced-motion="true"] .glass-surface__content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
