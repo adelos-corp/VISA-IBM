@@ -13,6 +13,16 @@ const links = [
 export function Navbar() {
   const pathname = usePathname()
 
+  function handleHomeClick(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (pathname === '/') {
+      event.preventDefault()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
+    sessionStorage.setItem('visa-scroll-home', 'true')
+  }
+
   return (
     <div className="fixed inset-x-0 top-4 z-[100] px-4 sm:px-6 lg:px-8 pointer-events-none">
       <div className="mx-auto max-w-6xl pointer-events-auto">
@@ -30,7 +40,7 @@ export function Navbar() {
               <a href="https://adeloscorp.com" target="_blank" rel="noreferrer" aria-label="ADELOS Corp." title="ADELOS Corp.">
                 <img src="/adelo-logo.svg" alt="ADELOS Corp." className="h-7 w-8 object-contain transition-opacity hover:opacity-80" />
               </a>
-              <Link href="/" className="text-sm font-semibold text-slate-100">VISA</Link>
+              <Link href="/" onClick={handleHomeClick} className="text-sm font-semibold text-slate-100">VISA</Link>
             </div>
 
             <div className="flex items-center gap-1 text-xs">
