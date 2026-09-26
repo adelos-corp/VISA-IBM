@@ -1,5 +1,4 @@
 import { execa } from 'execa'
-import net from 'net'
 import { Sandbox } from '@vercel/sandbox'
 import type { DeploymentPlan } from '../store/pipeline.store'
 
@@ -28,19 +27,6 @@ async function ensureDocker(sandbox: Sandbox): Promise<void> {
   if (ready.exitCode !== 0) throw new Error('Docker daemon did not become ready')
 }
 
-
-async function findAvailablePort(start: number, end = start + 50): Promise<number> {
-  for (let port = start; port <= end; port++) {
-    const available = await new Promise<boolean>((resolve) => {
-      const server = net.createServer()
-      server.once('error', () => resolve(false))
-      server.once('listening', () => server.close(() => resolve(true)))
-      server.listen(port, '127.0.0.1')
-    })
-    if (available) return port
-  }
-  throw new Error(`No available host port found between ${start} and ${end}`)
-}
 
 async function prepareSandbox(name: string, port: number): Promise<Sandbox> {
   const sandbox = await getSandbox(name, port)
@@ -75,15 +61,14 @@ export async function buildImage(projectPath: string, tag: string, onLog: (line:
 }
 
 export async function runContainer(tag: string, plan: DeploymentPlan, onLog: (line: string) => void): Promise<DockerRunResult> {
-  const hostPort = USE_VERCEL_SANDBOX
-    ? plan.port + 10000
-    : await findAvailablePort(plan.port + 10000)
+  const preferredPort = plan.port + 10000
   const envArgs: string[] = []
   for (const [key, value] of Object.entries(plan.envVars)) envArgs.push('-e', key + '=' + value)
   const containerName = tag.replace(/[^a-z0-9-]/g, '-')
-  const args = ['run', '-d', '--name', containerName, '-p', hostPort + ':' + plan.port, ...envArgs, tag]
 
   if (USE_VERCEL_SANDBOX) {
+    const hostPort = preferredPort
+    const args = ['run', '-d', '--name', containerName, '-p', hostPort + ':' + plan.port, ...envArgs, tag]
     const sandbox = await prepareSandbox(tag, hostPort)
     await sandbox.runCommand({ cmd: 'docker', args: ['rm', '-f', containerName] })
     onLog('docker ' + args.join(' '))
@@ -95,14 +80,29 @@ export async function runContainer(tag: string, plan: DeploymentPlan, onLog: (li
   }
 
   await execa('docker', ['rm', '-f', containerName], { reject: false })
-  onLog('docker ' + args.join(' '))
-  const result = await execa('docker', args, { reject: false })
-  if (result.exitCode !== 0) throw new Error('docker run failed: ' + result.stderr)
-  const containerId = result.stdout.trim()
-  onLog('Container started: ' + containerId.slice(0, 12))
-  return { containerId, port: hostPort }
-}
 
+  for (let offset = 0; offset <= 50; offset++) {
+    const hostPort = preferredPort + offset
+    const args = ['run', '-d', '--name', containerName, '-p', hostPort + ':' + plan.port, ...envArgs, tag]
+    onLog('docker ' + args.join(' '))
+    const result = await execa('docker', args, { reject: false })
+
+    if (result.exitCode === 0) {
+      const containerId = result.stdout.trim()
+      onLog('Container started: ' + containerId.slice(0, 12))
+      if (hostPort !== preferredPort) onLog(`Port ${preferredPort} was unavailable; using ${hostPort}`)
+      return { containerId, port: hostPort }
+    }
+
+    const errorText = `${result.stderr ?? ''}\n${result.stdout ?? ''}`
+    const portConflict = /port is already allocated|address already in use|failed to bind/i.test(errorText)
+
+    if (!portConflict) throw new Error('docker run failed: ' + result.stderr)
+    onLog(`Host port ${hostPort} is unavailable; trying ${hostPort + 1}`)
+  }
+
+  throw new Error(`No usable Docker host port found in ${preferredPort}-${preferredPort + 50}`)
+}
 function splitRunnerContainer(containerId: string) {
   const [sandboxName, dockerId] = containerId.split('::')
   if (!sandboxName || !dockerId) throw new Error('Invalid Sandbox container reference')
