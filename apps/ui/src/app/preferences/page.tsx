@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 
 type Preferences = {
+  theme: 'dark' | 'light'
   compact: boolean
   reducedMotion: boolean
   notifications: boolean
 }
 
-const defaults: Preferences = { compact: false, reducedMotion: false, notifications: true }
+const defaults: Preferences = { theme: 'dark', compact: false, reducedMotion: false, notifications: true }
 
 export default function PreferencesPage() {
   const [prefs, setPrefs] = useState<Preferences>(defaults)
@@ -17,7 +18,7 @@ export default function PreferencesPage() {
   useEffect(() => {
     try {
       const stored = localStorage.getItem('visa-preferences')
-      if (stored) setPrefs({ ...defaults, ...JSON.parse(stored) })
+      if (stored) setPrefs({ ...defaults, ...JSON.parse(stored), theme: localStorage.getItem('visa-theme') === 'light' ? 'light' : 'dark' })
     } catch {}
   }, [])
 
@@ -28,6 +29,8 @@ export default function PreferencesPage() {
 
   function save() {
     localStorage.setItem('visa-preferences', JSON.stringify(prefs))
+    document.documentElement.dataset.theme = prefs.theme
+    localStorage.setItem('visa-theme', prefs.theme)
     document.documentElement.dataset.reducedMotion = prefs.reducedMotion ? 'true' : 'false'
     document.documentElement.dataset.compact = prefs.compact ? 'true' : 'false'
     setSaved(true)
@@ -44,6 +47,18 @@ export default function PreferencesPage() {
         </div>
 
         <section className="mt-10 visa-card overflow-hidden">
+          <div className="flex items-center justify-between gap-6 border-b border-white/10 px-6 py-5 sm:px-8">
+            <div>
+              <h2 className="text-sm font-semibold text-white">Appearance</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-500">Choose the visual theme for this browser.</p>
+            </div>
+            <div className="flex rounded-lg border border-white/10 bg-white/[0.03] p-1">
+              {(['dark', 'light'] as const).map(mode => (
+                <button key={mode} type="button" onClick={() => { setPrefs(prev => ({ ...prev, theme: mode })); setSaved(false) }} className={`rounded-md px-3 py-1.5 text-[11px] font-medium capitalize transition ${prefs.theme === mode ? 'bg-white text-slate-950' : 'text-slate-500 hover:text-slate-200'}`}>{mode}</button>
+              ))}
+            </div>
+          </div>
+
           {[
             ['compact', 'Compact interface', 'Reduce spacing in dashboard surfaces and lists.'],
             ['reducedMotion', 'Reduce motion', 'Disable non-essential transitions and animated effects.'],
