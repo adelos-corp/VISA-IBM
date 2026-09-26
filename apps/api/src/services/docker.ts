@@ -60,8 +60,20 @@ export async function buildImage(projectPath: string, tag: string, onLog: (line:
   return { imageId: inspect.stdout?.trim() ?? tag, logs }
 }
 
+async function isHostPortPublished(port: number): Promise<boolean> {
+  const result = await execa('docker', ['ps', '--filter', 'publish=' + port, '--format={{.ID}}'], { reject: false })
+  return Boolean((result.stdout ?? '').trim())
+}
+
+async function findDockerHostPort(start: number, end = start + 50): Promise<number> {
+  for (let port = start; port <= end; port++) {
+    if (!(await isHostPortPublished(port))) return port
+  }
+  throw new Error(`No unused Docker host port found between ${start} and ${end}`)
+}
+
 export async function runContainer(tag: string, plan: DeploymentPlan, onLog: (line: string) => void): Promise<DockerRunResult> {
-  const preferredPort = plan.port + 10000
+  const preferredPort = USE_VERCEL_SANDBOX ? plan.port + 10000 : await findDockerHostPort(plan.port + 10000)
   const envArgs: string[] = []
   for (const [key, value] of Object.entries(plan.envVars)) envArgs.push('-e', key + '=' + value)
   const containerName = tag.replace(/[^a-z0-9-]/g, '-')
@@ -83,6 +95,10 @@ export async function runContainer(tag: string, plan: DeploymentPlan, onLog: (li
 
   for (let offset = 0; offset <= 50; offset++) {
     const hostPort = preferredPort + offset
+    if (offset > 0 && await isHostPortPublished(hostPort)) {
+      onLog(`Host port ${hostPort} is already published; skipping`)
+      continue
+    }
     const args = ['run', '-d', '--name', containerName, '-p', hostPort + ':' + plan.port, ...envArgs, tag]
     onLog('docker ' + args.join(' '))
     const result = await execa('docker', args, { reject: false })
