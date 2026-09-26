@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import GlassSurface from '@/components/react-bits/GlassSurface'
-import { ThemeToggle } from '@/components/ThemeToggle'
 
 const links = [
   { href: '/', label: 'Overview' },
@@ -52,7 +51,6 @@ export function Navbar() {
 
               <Link href="/about" className="hidden rounded-full px-3 py-1.5 text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-200 md:block">About</Link>
               <Link href="/preferences" aria-label="Preferences" className="hidden rounded-full px-3 py-1.5 text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-200 sm:block">Preferences</Link>
-              <ThemeToggle />
 
               <span className="ml-1 hidden items-center gap-1.5 border-l border-white/10 pl-3 text-slate-500 lg:flex">
                 <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
