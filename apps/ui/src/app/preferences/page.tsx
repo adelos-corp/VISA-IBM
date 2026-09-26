@@ -71,11 +71,11 @@ export default function PreferencesPage() {
               </div>
               <button
                 type="button"
-                aria-pressed={prefs[key as keyof Preferences]}
-                onClick={() => update(key as keyof Preferences)}
-                className={`relative h-6 w-11 shrink-0 rounded-full border transition ${prefs[key as keyof Preferences] ? 'border-white/30 bg-white/20' : 'border-white/10 bg-white/[0.04]'}`}
+                aria-pressed={prefs[key as 'compact' | 'reducedMotion' | 'notifications']}
+                onClick={() => update(key as 'compact' | 'reducedMotion' | 'notifications')}
+                className={`relative h-6 w-11 shrink-0 rounded-full border transition ${prefs[key as 'compact' | 'reducedMotion' | 'notifications'] ? 'border-white/30 bg-white/20' : 'border-white/10 bg-white/[0.04]'}`}
               >
-                <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${prefs[key as keyof Preferences] ? 'left-6' : 'left-1'}`} />
+                <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${prefs[key as 'compact' | 'reducedMotion' | 'notifications'] ? 'left-6' : 'left-1'}`} />
               </button>
             </div>
           ))}
