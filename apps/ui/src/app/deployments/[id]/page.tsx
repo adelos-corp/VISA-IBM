@@ -70,6 +70,16 @@ export default function DeploymentPage() {
       if (event.type === 'stage') {
         const s = event.payload as unknown as StageUpdate
         setStages(prev => ({ ...prev, [s.stage]: s }))
+
+        // The FAILED status can arrive before the diagnosis has been persisted.
+        // Refreshing only on status therefore creates a race where the recovery
+        // decision is missing until the user reloads the page. Once the diagnosis
+        // stage settles, fetch the persisted diagnosis again.
+        if (s.stage === 'diagnosis' && s.stageStatus === 'DONE') {
+          deployments.getDiagnosis(id)
+            .then(r => { if (r.diagnosis) setDiagnosis(r.diagnosis) })
+            .catch(() => {})
+        }
       }
       if (event.type === 'log') setLogs(prev => [...prev, event.payload as unknown as LogEntry])
     }, () => {})
