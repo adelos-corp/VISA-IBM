@@ -5,7 +5,7 @@ import type { DiagnosisResult, ProposedCorrection } from './diagnosis'
 const GRANITE_MODEL = process.env.GRANITE_MODEL ?? 'ibm/granite4.2:3b'
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL ?? (process.env.VERCEL === '1' ? 'https://ollama.com' : 'http://127.0.0.1:11434')).replace(/\/$/, '')
 const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY
-const GRANITE_TIMEOUT_MS = Number(process.env.GRANITE_TIMEOUT_MS ?? '20000')
+const GRANITE_TIMEOUT_MS = Number(process.env.GRANITE_TIMEOUT_MS ?? '10000')
 
 interface GraniteDiagnosis {
   failureType: DiagnosisResult['failureType']
@@ -25,7 +25,7 @@ export async function diagnoseWithGranite(input: {
   try {
     const dockerfilePath = path.join(input.projectPath, 'Dockerfile')
     const dockerfile = fs.existsSync(dockerfilePath)
-      ? fs.readFileSync(dockerfilePath, 'utf8').slice(0, 20000)
+      ? fs.readFileSync(dockerfilePath, 'utf8').slice(0, 8000)
       : ''
 
     const prompt = [
@@ -42,7 +42,7 @@ export async function diagnoseWithGranite(input: {
       '{"failureType":"CORRECTABLE|NEEDS_HUMAN|UNRECOVERABLE","rootCause":"string","confidence":0,"rationale":"string","proposedCorrection":{"type":"ADD_ENV_VAR|FIX_DOCKERFILE|MANUAL","description":"string","envVar":"optional","envValue":"optional","dockerfilePatch":{"search":"optional","replace":"optional"},"diff":"string"}}',
       '',
       'Deployment logs:',
-      input.containerLogs.join('\n').slice(-20000),
+      input.containerLogs.join('\n').slice(-8000),
       '',
       'Dockerfile:',
       dockerfile,
@@ -62,7 +62,7 @@ export async function diagnoseWithGranite(input: {
         stream: false,
         format: 'json',
         think: false,
-        options: { temperature: 0 },
+        options: { temperature: 0, num_predict: 512 },
         messages: [
           { role: 'system', content: 'You are a precise deployment failure analysis and bounded code-correction engine.' },
           { role: 'user', content: prompt },
