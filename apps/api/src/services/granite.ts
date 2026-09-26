@@ -5,7 +5,7 @@ import type { DiagnosisResult, ProposedCorrection } from './diagnosis'
 const GRANITE_MODEL = process.env.GRANITE_MODEL ?? 'ibm/granite4.2:3b'
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL ?? (process.env.VERCEL === '1' ? 'https://ollama.com' : 'http://127.0.0.1:11434')).replace(/\/$/, '')
 const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY
-const GRANITE_TIMEOUT_MS = Number(process.env.GRANITE_TIMEOUT_MS ?? '8000')
+const GRANITE_TIMEOUT_MS = Number(process.env.GRANITE_TIMEOUT_MS ?? '20000')
 
 interface GraniteSignal {
   failureType: DiagnosisResult['failureType']
@@ -21,7 +21,7 @@ export async function diagnoseWithGranite(input: {
   containerLogs: string[]
   projectPath: string
   fallback: () => DiagnosisResult
-}): Promise<{ result: DiagnosisResult; modelUsed: string; usedFallback: boolean; durationMs: number }> {
+}): Promise<{ result: DiagnosisResult; modelUsed: string; usedFallback: boolean; durationMs: number; error?: string }> {
   const started = Date.now()
   const fallback = input.fallback()
 
@@ -62,7 +62,7 @@ export async function diagnoseWithGranite(input: {
         keep_alive: '5m',
         options: {
           temperature: 0,
-          num_predict: 220,
+          num_predict: 128,
         },
         messages: [
           {
@@ -92,12 +92,13 @@ export async function diagnoseWithGranite(input: {
       usedFallback: false,
       durationMs: Date.now() - started,
     }
-  } catch {
+  } catch (error) {
     return {
       result: fallback,
       modelUsed: GRANITE_MODEL,
       usedFallback: true,
       durationMs: Date.now() - started,
+      error: error instanceof Error ? error.message : String(error),
     }
   }
 }
