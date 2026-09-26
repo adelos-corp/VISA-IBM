@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 export default function DeployPage() {
   return (
-    <main className="visa-grid min-h-screen px-4 pb-16 pt-32 sm:px-6 lg:px-8">
+    <main className="visa-grid min-h-screen px-4 pb-24 pt-32 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-10 max-w-2xl">
           <p className="visa-eyebrow">Deployment center</p>
