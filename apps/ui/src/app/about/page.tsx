@@ -9,7 +9,7 @@ const principles = [
 
 export default function AboutPage() {
   return (
-    <main className="visa-grid min-h-screen px-4 pb-16 pt-32 sm:px-6 lg:px-8">
+    <main className="visa-grid min-h-screen px-4 pb-24 pt-32 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <div className="max-w-3xl">
           <p className="visa-eyebrow">About VISA</p>
