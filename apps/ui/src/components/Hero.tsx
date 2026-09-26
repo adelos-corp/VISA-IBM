@@ -1,7 +1,5 @@
 'use client'
 
-import Link from 'next/link'
-import GlassSurface from '@/components/react-bits/GlassSurface'
 import StrokeText from '@/components/react-bits/StrokeText'
 
 export function Hero() {
