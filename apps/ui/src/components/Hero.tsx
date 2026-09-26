@@ -14,7 +14,7 @@ export function Hero() {
   }, [])
 
   return (
-    <section className={`relative mb-10 -mx-4 border-b border-white/10 px-4 pb-0 pt-28 ${light ? "bg-[radial-gradient(circle_at_50%_0%,#ffffff_0%,#f6f8fa_55%,#eef1f4_100%)]" : "bg-[radial-gradient(circle_at_50%_0%,#182235_0%,#0b1220_42%,#030712_100%)]"}` sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+    <section className={`relative mb-10 -mx-4 border-b border-white/10 px-4 pb-0 pt-28 ${light ? "bg-[radial-gradient(circle_at_50%_0%,#ffffff_0%,#f6f8fa_55%,#eef1f4_100%)]" : "bg-[radial-gradient(circle_at_50%_0%,#182235_0%,#0b1220_42%,#030712_100%)]"} sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="relative z-10 py-16 text-center sm:py-20">
           <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8b949e]">Fast · Approved · Auto-Correctible</p>
