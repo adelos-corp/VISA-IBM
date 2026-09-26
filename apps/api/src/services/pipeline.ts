@@ -300,7 +300,7 @@ export async function resumeAfterCorrectionApproval(deploymentId: string): Promi
     }
 
     emitStage(deploymentId, 'redeploy', 'DONE')
-    await runVerification(deploymentId, hostPort, plan, containerId, project.localPath)
+    await runVerification(deploymentId, hostPort, plan, containerId, await resolveProjectPath(project, deploymentId + '-verify'))
 
   } catch (err) {
     log(deploymentId, 'visa', `Correction error: ${err}`)
