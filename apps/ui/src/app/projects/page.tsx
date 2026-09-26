@@ -11,16 +11,16 @@ interface ProjectWithLatest {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  PENDING: 'border-white/10 bg-white/[0.04]/[0.04] text-slate-300',
-  ANALYZING: 'border-blue-400/20 bg-blue-400/10 text-blue-300',
+  PENDING: 'border-white/10 bg-white/[0.04] text-slate-300',
+  ANALYZING: 'border-white/10 bg-white/[0.06] text-slate-200',
   CHECKING: 'border-blue-400/20 bg-blue-400/10 text-blue-300',
-  AWAITING_APPROVAL: 'border-white/10 bg-white/[0.04]/[0.06] text-slate-200',
+  AWAITING_APPROVAL: 'border-white/10 bg-white/[0.06] text-slate-200',
   DEPLOYING: 'border-blue-400/20 bg-blue-400/10 text-blue-300',
   VERIFYING: 'border-blue-400/20 bg-blue-400/10 text-blue-300',
   LIVE: 'border-blue-400/20 bg-blue-400/10 text-blue-300',
-  FAILED: 'border-white/10 bg-white/[0.04]/[0.04] text-slate-300',
+  FAILED: 'border-white/10 bg-white/[0.04] text-slate-300',
   CORRECTING: 'border-blue-400/20 bg-blue-400/10 text-blue-300',
-  TERMINAL: 'border-white/10 bg-white/[0.04]/[0.04] text-slate-300',
+  TERMINAL: 'border-white/10 bg-white/[0.04] text-slate-300',
 }
 
 export default function ProjectsPage() {
@@ -51,7 +51,7 @@ export default function ProjectsPage() {
               <h1 className="mt-1 text-3xl font-semibold tracking-[-0.03em] text-white">Projects</h1>
               <p className="mt-2 max-w-2xl text-sm text-slate-500">Repositories and applications managed by the VISA deployment control plane.</p>
             </div>
-            <Link href="/" className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800">+ New deployment</Link>
+            <Link href="/" className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-xs font-semibold text-slate-950 shadow-sm hover:bg-slate-200">+ New deployment</Link>
           </div>
 
           {loading && (
@@ -64,10 +64,10 @@ export default function ProjectsPage() {
 
           {!loading && !error && items.length === 0 && (
             <div className="visa-card p-14 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white text-sm font-bold text-white">V</div>
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-sm font-bold text-white">V</div>
               <p className="text-sm font-semibold text-slate-200">No projects registered</p>
               <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-slate-500">Connect a repository to create the first managed application.</p>
-              <Link href="/" className="mt-5 inline-flex rounded-lg bg-blue-500 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-400">Deploy a repository</Link>
+              <Link href="/" className="mt-5 inline-flex rounded-lg bg-white px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-slate-200">Deploy a repository</Link>
             </div>
           )}
 
@@ -76,7 +76,7 @@ export default function ProjectsPage() {
               <div className="grid grid-cols-[1.4fr_.5fr_.55fr] gap-4 border-b border-white/10 bg-white/[0.03] px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                 <span>Project</span><span>Deployments</span><span>Latest state</span>
               </div>
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-white/10">
                 {items.map(({ project, latest, total }) => (
                   <div key={project.id} className="grid grid-cols-1 gap-4 px-5 py-5 transition-colors hover:bg-white/[0.03] sm:grid-cols-[1.4fr_.5fr_.55fr] sm:items-center">
                     <div className="min-w-0">
