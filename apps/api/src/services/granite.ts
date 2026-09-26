@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import type { DiagnosisResult, ProposedCorrection } from './diagnosis'
 
-const GRANITE_MODEL = process.env.GRANITE_MODEL ?? 'granite4.2:3b'
+const GRANITE_MODEL = process.env.GRANITE_MODEL ?? 'ibm/granite4.2:3b'
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL ?? (process.env.VERCEL === '1' ? 'https://ollama.com' : 'http://127.0.0.1:11434')).replace(/\/$/, '')
 const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY
 const GRANITE_TIMEOUT_MS = Number(process.env.GRANITE_TIMEOUT_MS ?? '20000')
