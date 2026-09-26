@@ -122,7 +122,7 @@ export default function Home() {
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-600">02 / Recovery</p>
             <div className="mt-6 grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-end">
               <h2 className="text-[clamp(3rem,7vw,6.5rem)] font-semibold leading-[0.9] tracking-[-0.065em]">
-                Failure isn't the end.
+                Failure isn&apos;t the end.
               </h2>
               <p className="max-w-xl text-base leading-7 text-slate-500">
                 When a deployment fails, VISA closes the loop. It reads the failure signal, diagnoses bounded corrective actions, keeps approval in the flow, and returns to verification.
