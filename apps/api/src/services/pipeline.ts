@@ -27,7 +27,6 @@ import {
 import { analyzeProject } from './analyzer'
 import { runPreChecks } from './preChecks'
 import { buildImage, runContainer, waitForContainerExit, stopContainer, getRunnerEndpoint, syncRunnerFile } from './docker'
-import { verifyHealth } from './verifier'
 import { diagnose } from './diagnosis'
 import { applyCorrection } from './corrector'
 import { emitStatus, emitLog, emitStage } from './sse'
@@ -167,12 +166,12 @@ export async function resumeAfterDeployApproval(deploymentId: string): Promise<v
     if (exitCode !== 0) {
       emitStage(deploymentId, 'deploy', 'FAILED')
       log(deploymentId, 'visa', `Container exited with code ${exitCode} — running diagnosis`)
-      await runDiagnosis(deploymentId, containerLogs, project.localPath, plan)
+      await runDiagnosis(deploymentId, containerLogs, await resolveProjectPath(project, deploymentId + '-diagnosis'), plan)
       return
     }
 
     // ── Stage 5: VERIFYING ──────────────────────────────────────────────────
-    await runVerification(deploymentId, hostPort, plan, containerId, project.localPath)
+    await runVerification(deploymentId, hostPort, plan, containerId, await resolveProjectPath(project, deploymentId + '-verify'))
 
   } catch (err) {
     log(deploymentId, 'visa', `Deploy error: ${err}`)
@@ -187,8 +186,8 @@ export async function resumeAfterCorrectionApproval(deploymentId: string): Promi
   if (!deployment) return
 
   const project = getProjectById(deployment.projectId)
-  if (!project?.localPath) {
-    log(deploymentId, 'visa', 'Error: project localPath not set')
+  if (!project?.localPath && !project?.gitUrl) {
+    log(deploymentId, 'visa', 'Error: project source is not set')
     transition(deploymentId, 'TERMINAL')
     return
   }
