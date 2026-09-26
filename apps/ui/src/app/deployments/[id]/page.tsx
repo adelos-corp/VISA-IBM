@@ -152,6 +152,8 @@ export default function DeploymentPage() {
             label="Granite is thinking…"
             doneLabel={graniteFallback ? 'Fallback diagnosis completed' : 'Granite analyzed the failure'}
             glyph="sparkle"
+            color="#f8fafc"
+            glyphColor="#8ab4f8"
             fontSize={14}
             breathPeriod={1.6}
             breathDepth={0.45}
