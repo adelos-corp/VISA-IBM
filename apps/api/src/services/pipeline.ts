@@ -148,7 +148,8 @@ export async function resumeAfterDeployApproval(deploymentId: string): Promise<v
     emitStage(deploymentId, 'deploy', 'RUNNING')
     log(deploymentId, 'visa', `Building Docker image: ${plan.imageTag}`)
 
-    await buildImage(project.localPath ?? project.gitUrl!, plan.imageTag, line =>
+    const buildProjectPath = await resolveProjectPath(project, deploymentId)
+    await buildImage(buildProjectPath, plan.imageTag, line =>
       log(deploymentId, 'docker:build', line)
     )
 
@@ -167,12 +168,12 @@ export async function resumeAfterDeployApproval(deploymentId: string): Promise<v
     if (exitCode !== 0) {
       emitStage(deploymentId, 'deploy', 'FAILED')
       log(deploymentId, 'visa', `Container exited with code ${exitCode} — running diagnosis`)
-      await runDiagnosis(deploymentId, containerLogs, await resolveProjectPath(project, deploymentId + '-diagnosis'), plan)
+      await runDiagnosis(deploymentId, containerLogs, buildProjectPath, plan)
       return
     }
 
     // ── Stage 5: VERIFYING ──────────────────────────────────────────────────
-    await runVerification(deploymentId, hostPort, plan, containerId, await resolveProjectPath(project, deploymentId + '-verify'))
+    await runVerification(deploymentId, hostPort, plan, containerId, buildProjectPath)
 
   } catch (err) {
     log(deploymentId, 'visa', `Deploy error: ${err}`)
@@ -280,7 +281,10 @@ export async function resumeAfterCorrectionApproval(deploymentId: string): Promi
     const oldDep = getDeploymentById(deploymentId)
     if (oldDep?.containerId) await stopContainer(oldDep.containerId)
 
-    await buildImage(project.localPath ?? project.gitUrl!, correctedPlan.imageTag, line =>
+    const redeploySource = process.env.VERCEL === '1' || process.env.RUNNER_MODE === 'vercel-sandbox'
+      ? project.gitUrl!
+      : correctionProjectPath
+    await buildImage(redeploySource, correctedPlan.imageTag, line =>
       log(deploymentId, 'docker:build', line)
     )
 
@@ -301,7 +305,7 @@ export async function resumeAfterCorrectionApproval(deploymentId: string): Promi
     }
 
     emitStage(deploymentId, 'redeploy', 'DONE')
-    await runVerification(deploymentId, hostPort, plan, containerId, await resolveProjectPath(project, deploymentId + '-verify'))
+    await runVerification(deploymentId, hostPort, correctedPlan, containerId, correctionProjectPath)
 
   } catch (err) {
     log(deploymentId, 'visa', `Correction error: ${err}`)
