@@ -3,7 +3,8 @@ import path from 'path'
 import type { DiagnosisResult, ProposedCorrection } from './diagnosis'
 
 const GRANITE_MODEL = process.env.GRANITE_MODEL ?? 'granite4.2:3b'
-const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL ?? 'http://127.0.0.1:11434').replace(/\/$/, '')
+const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL ?? (process.env.VERCEL === '1' ? 'https://ollama.com' : 'http://127.0.0.1:11434')).replace(/\/$/, '')
+const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY
 const GRANITE_TIMEOUT_MS = Number(process.env.GRANITE_TIMEOUT_MS ?? '20000')
 
 interface GraniteDiagnosis {
@@ -52,11 +53,15 @@ export async function diagnoseWithGranite(input: {
 
     const response = await fetch(OLLAMA_BASE_URL + '/api/chat', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        ...(OLLAMA_API_KEY ? { authorization: 'Bearer ' + OLLAMA_API_KEY } : {}),
+      },
       body: JSON.stringify({
         model: GRANITE_MODEL,
         stream: false,
         format: 'json',
+        think: false,
         options: { temperature: 0 },
         messages: [
           { role: 'system', content: 'You are a precise deployment failure analysis and bounded code-correction engine.' },
