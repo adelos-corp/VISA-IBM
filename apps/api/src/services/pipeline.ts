@@ -320,9 +320,10 @@ async function runVerification(
 ): Promise<void> {
   transition(deploymentId, 'VERIFYING')
   emitStage(deploymentId, 'verification', 'RUNNING')
-  log(deploymentId, 'visa', `Verifying health at localhost:${hostPort}${plan.healthPath}`)
+  const endpoint = await getRunnerEndpoint(plan.imageTag, hostPort, plan.healthPath)
+  log(deploymentId, 'visa', `Verifying health at ${endpoint}`)
 
-  const vr = await verifyHealth(hostPort, plan.healthPath, line =>
+  const vr = await verifyHealthEndpoint(endpoint, line =>
     log(deploymentId, 'verify', line)
   )
   saveVerification({
@@ -344,6 +345,36 @@ async function runVerification(
     await stopContainer(containerId)
     await runDiagnosis(deploymentId, [], projectPath, plan)
   }
+}
+
+async function verifyHealthEndpoint(endpoint: string, onLog: (line: string) => void): Promise<{ endpoint: string; httpStatus: number | null; responseTimeMs: number | null; healthy: boolean; attempts: number }> {
+  const attempts = 5
+  let lastStatus: number | null = null
+  let lastTime: number | null = null
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const started = Date.now()
+    try {
+      const response = await fetch(endpoint)
+      lastStatus = response.status
+      lastTime = Date.now() - started
+      onLog(`Attempt ${attempt}: HTTP ${response.status} (${lastTime}ms)`)
+      if (response.ok) return { endpoint, httpStatus: response.status, responseTimeMs: lastTime, healthy: true, attempts: attempt }
+    } catch (error) {
+      onLog(`Attempt ${attempt}: ${String(error)}`)
+    }
+    await new Promise(resolve => setTimeout(resolve, 500))
+  }
+  return { endpoint, httpStatus: lastStatus, responseTimeMs: lastTime, healthy: false, attempts }
+}
+
+async function resolveProjectPath(project: { localPath: string | null; gitUrl: string | null }, deploymentId: string): Promise<string> {
+  if (project.localPath) return project.localPath
+  if (!project.gitUrl) throw new Error('Project has no local path or Git URL')
+  const target = path.join('/tmp', 'visa-' + deploymentId.replace(/[^a-zA-Z0-9-]/g, '-'))
+  if (fs.existsSync(path.join(target, '.git'))) return target
+  fs.rmSync(target, { recursive: true, force: true })
+  await simpleGit().clone(project.gitUrl, target, ['--depth', '1'])
+  return target
 }
 
 async function runDiagnosis(
