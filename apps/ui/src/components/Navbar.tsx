@@ -21,10 +21,10 @@ export function Navbar() {
           width="100%"
           height={58}
           borderRadius={999}
-          backgroundOpacity={0.22}
-          saturation={0.8}
+          backgroundOpacity={0.34}
+          saturation={0.9}
           distortionScale={-60}
-          className="border border-[#2d4a72]/35 bg-[#071426]/20 shadow-2xl shadow-black/30"
+          className="visa-navbar-glass border border-[#355b88]/30 shadow-2xl shadow-black/30"
         >
           <nav className="flex h-full w-full items-center justify-between px-3 sm:px-4">
             <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-slate-100">
