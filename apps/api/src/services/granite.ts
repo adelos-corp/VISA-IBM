@@ -35,7 +35,9 @@ export async function diagnoseWithGranite(input: {
     const prompt = [
       'Diagnose this Docker deployment failure for VISA.',
       'Return ONLY compact JSON matching this schema:',
-      '{"failureType":"CORRECTABLE|NEEDS_HUMAN|UNRECOVERABLE","rootCause":"string","confidence":0,"rationale":"string","correctionType":"ADD_ENV_VAR|FIX_DOCKERFILE|MANUAL","envVar":"optional","envValue":"optional"}',
+      '{"failureType":"CORRECTABLE|NEEDS_HUMAN|UNRECOVERABLE","rootCause":"string","confidence":0,"rationale":"string","correctionType":"ADD_ENV_VAR|MANUAL","envVar":"optional","envValue":"optional"}',
+      'If a missing environment variable caused the crash, correctionType MUST be ADD_ENV_VAR and you MUST provide envVar and envValue. Do not use FIX_DOCKERFILE.',
+      'For this demo, if APP_SECRET is missing, use envVar="APP_SECRET" and envValue="visa-demo-secret".',
       'Only recommend a bounded Dockerfile correction. Never propose shell commands or arbitrary code changes.',
       '',
       'LOGS:',
@@ -105,7 +107,7 @@ export async function diagnoseWithGranite(input: {
 
 function materializeDiagnosis(signal: GraniteSignal, projectPath: string, fallback: DiagnosisResult): DiagnosisResult {
   const allowedFailureTypes: DiagnosisResult['failureType'][] = ['CORRECTABLE', 'NEEDS_HUMAN', 'UNRECOVERABLE']
-  const allowedCorrectionTypes: ProposedCorrection['type'][] = ['ADD_ENV_VAR', 'FIX_DOCKERFILE', 'FIX_CODE', 'MANUAL']
+  const allowedCorrectionTypes: ProposedCorrection['type'][] = ['ADD_ENV_VAR', 'MANUAL']
 
   if (!allowedFailureTypes.includes(signal.failureType)) return fallback
   if (!signal.rootCause || !signal.rationale) return fallback
