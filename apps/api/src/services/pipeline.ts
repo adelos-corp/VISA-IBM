@@ -433,8 +433,8 @@ async function runDiagnosis(
   })
   const result = ai.result
   log(deploymentId, 'visa', ai.usedFallback
-    ? `Granite unavailable — deterministic diagnosis fallback used (${ai.modelUsed})`
-    : `Granite model: ${ai.modelUsed}`)
+    ? `Granite unavailable after ${ai.durationMs}ms — deterministic diagnosis fallback used (${ai.modelUsed})`
+    : `Granite model: ${ai.modelUsed} responded in ${ai.durationMs}ms`)
 
   const saved = saveDiagnosis({
     deploymentId,
@@ -458,6 +458,9 @@ async function runDiagnosis(
     failureType: result.failureType,
     correctable: result.failureType === 'CORRECTABLE',
     diagnosisId: saved.id,
+    model: ai.modelUsed,
+    usedFallback: ai.usedFallback,
+    durationMs: ai.durationMs,
   })
 }
 
