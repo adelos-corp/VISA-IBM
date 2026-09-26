@@ -26,9 +26,9 @@ export function Navbar() {
           className="visa-navbar-glass border border-[#355b88]/30 shadow-2xl shadow-black/30"
         >
           <nav className="flex h-full w-full items-center justify-between px-3 sm:px-4">
-            <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-slate-100">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md border border-white/15 bg-white/[0.08] text-xs font-bold text-white">V</span>
-              VISA
+            <Link href="/" className="flex items-center gap-2.5 text-sm font-semibold text-slate-100">
+              <img src="/adelo-logo.svg" alt="ADELOS Corp." className="h-7 w-8 object-contain" />
+              <span>VISA</span>
             </Link>
 
             <div className="flex items-center gap-1 text-xs">
