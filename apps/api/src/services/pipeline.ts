@@ -55,8 +55,7 @@ export async function startPipeline(deploymentId: string): Promise<void> {
   const project = getProjectById(deployment.projectId)
   if (!project) throw new Error('Project not found')
 
-  const projectPath = project.localPath ?? project.gitUrl
-  if (!projectPath) throw new Error('Project has no path')
+  const projectPath = await resolveProjectPath(project, deploymentId)
 
   _lineCounters.set(deploymentId, 0)
 
@@ -100,6 +99,7 @@ export async function startPipeline(deploymentId: string): Promise<void> {
       // Intentionally empty on the first deployment so the demo can exercise
       // the failure → diagnosis → approval → correction loop.
       envVars: {},
+      sourceUrl: project.gitUrl ?? undefined,
       steps: [
         `docker build -t ${tag} ${projectPath}`,
         `docker run -d -p ${analysis.port + 10000}:${analysis.port} ${tag}`,
@@ -129,8 +129,8 @@ export async function resumeAfterDeployApproval(deploymentId: string): Promise<v
   if (!deployment) return
 
   const project = getProjectById(deployment.projectId)
-  if (!project?.localPath) {
-    log(deploymentId, 'visa', 'Error: project localPath not set')
+  if (!project?.localPath && !project?.gitUrl) {
+    log(deploymentId, 'visa', 'Error: project source is not set')
     transition(deploymentId, 'TERMINAL')
     return
   }
@@ -148,7 +148,7 @@ export async function resumeAfterDeployApproval(deploymentId: string): Promise<v
     emitStage(deploymentId, 'deploy', 'RUNNING')
     log(deploymentId, 'visa', `Building Docker image: ${plan.imageTag}`)
 
-    await buildImage(project.localPath, plan.imageTag, line =>
+    await buildImage(project.localPath ?? project.gitUrl!, plan.imageTag, line =>
       log(deploymentId, 'docker:build', line)
     )
 
@@ -221,7 +221,12 @@ export async function resumeAfterCorrectionApproval(deploymentId: string): Promi
     const correction = JSON.parse(diag.proposedCorrectionJson) as import('./diagnosis').ProposedCorrection
     log(deploymentId, 'visa', `Applying correction: ${correction.description}`)
 
-    const result = await applyCorrection(project.localPath, correction)
+    const correctionProjectPath = await resolveProjectPath(project, deploymentId + '-correction')
+    const result = await applyCorrection(correctionProjectPath, correction)
+    if (correction.envVar && correction.envValue) {
+      const dockerfile = fs.readFileSync(path.join(correctionProjectPath, 'Dockerfile'), 'utf8')
+      await syncRunnerFile(plan.imageTag, 'Dockerfile', dockerfile)
+    }
     log(deploymentId, 'visa', result.description)
 
     saveCorrectionAttempt({
@@ -275,7 +280,7 @@ export async function resumeAfterCorrectionApproval(deploymentId: string): Promi
     const oldDep = getDeploymentById(deploymentId)
     if (oldDep?.containerId) await stopContainer(oldDep.containerId)
 
-    await buildImage(project.localPath, correctedPlan.imageTag, line =>
+    await buildImage(project.localPath ?? project.gitUrl!, correctedPlan.imageTag, line =>
       log(deploymentId, 'docker:build', line)
     )
 
