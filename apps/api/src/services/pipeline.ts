@@ -161,6 +161,16 @@ export async function resumeAfterDeployApproval(deploymentId: string): Promise<v
     const { containerId, port: hostPort } = await runContainer(plan.imageTag, plan, line =>
       log(deploymentId, 'docker:run', line)
     )
+    const runtimePlan: DeploymentPlan = {
+      ...plan,
+      steps: plan.steps.map(step =>
+        step
+          .replace(/-p \d+:\d+/, `-p ${hostPort}:${plan.port}`)
+          .replace(/localhost:\d+/, `localhost:${hostPort}`)
+      ),
+    }
+    savePlan(deploymentId, runtimePlan)
+    log(deploymentId, 'visa', `Runtime host port allocated: ${hostPort}`)
     updateDeploymentStatus(deploymentId, 'DEPLOYING', { containerId })
 
     log(deploymentId, 'visa', `Watching container startup (${containerId.slice(0, 12)})…`)
@@ -294,6 +304,16 @@ export async function resumeAfterCorrectionApproval(deploymentId: string): Promi
     const { containerId, port: hostPort } = await runContainer(correctedPlan.imageTag, correctedPlan, line =>
       log(deploymentId, 'docker:run', line)
     )
+    const runtimeCorrectedPlan: DeploymentPlan = {
+      ...correctedPlan,
+      steps: correctedPlan.steps.map(step =>
+        step
+          .replace(/-p \d+:\d+/, `-p ${hostPort}:${correctedPlan.port}`)
+          .replace(/localhost:\d+/, `localhost:${hostPort}`)
+      ),
+    }
+    savePlan(deploymentId, runtimeCorrectedPlan)
+    log(deploymentId, 'visa', `Runtime host port allocated: ${hostPort}`)
     updateDeploymentStatus(deploymentId, 'DEPLOYING', { containerId })
 
     const { exitCode, logs: containerLogs } = await waitForContainerExit(containerId, CONTAINER_STARTUP_GRACE_MS, line =>
