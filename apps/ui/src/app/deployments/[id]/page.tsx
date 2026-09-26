@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { deployments, type Deployment, type DeploymentEvent, type LogEntry } from '@/lib/api'
+import ThoughtLine from '@/components/react-bits/ThoughtLine'
 
 interface StageUpdate { stage: string; stageStatus: 'RUNNING' | 'DONE' | 'FAILED'; [k: string]: unknown }
 interface DiagnosisInfo {
@@ -95,6 +96,7 @@ export default function DeploymentPage() {
   const statusLabel = STATUS_LABEL[deployment.status] ?? deployment.status
   const statusColor = STATUS_COLOR[deployment.status] ?? STATUS_COLOR.PENDING
   const isTerminal = TERMINAL_STATUSES.has(deployment.status)
+  const graniteThinking = stages.diagnosis?.stageStatus === 'RUNNING'
   let diagnosisCorrection: { diff?: string } | null = null
   if (diagnosis) {
     try { diagnosisCorrection = JSON.parse(diagnosis.proposedCorrectionJson) } catch { diagnosisCorrection = null }
@@ -140,6 +142,26 @@ export default function DeploymentPage() {
       </section>
 
       <StageTracker stages={stages} status={deployment.status} />
+
+      {(graniteThinking || stages.diagnosis?.stageStatus === 'DONE') && (
+        <section className="visa-card mb-4 px-5 py-4">
+          <ThoughtLine
+            working={graniteThinking}
+            steps={['Reading deployment logs', 'Analyzing the failure', 'Preparing a bounded correction']}
+            label="Granite is thinking…"
+            doneLabel="Granite analyzed the failure"
+            glyph="sparkle"
+            fontSize={14}
+            breathPeriod={1.6}
+            breathDepth={0.45}
+            settleDuration={350}
+            settleBlur={2}
+            collapsible
+            collapseOnSettle
+            showTimer
+          />
+        </section>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1.25fr_.75fr]">
         <div className="space-y-4">
